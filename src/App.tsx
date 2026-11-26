@@ -14,6 +14,25 @@ export default function App() {
 
   const [hud, setHud] = useState<HUDState | null>(null);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
+  const [showIntro, setShowIntro] = useState(true);
+
+  const dismissIntro = useCallback(() => {
+    setShowIntro((prev) => {
+      if (!prev) return false;
+      engineRef.current?.audio.unlock();
+      return false;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!showIntro) return;
+    const onAnyKey = (e: KeyboardEvent) => {
+      e.preventDefault();
+      dismissIntro();
+    };
+    window.addEventListener('keydown', onAnyKey);
+    return () => window.removeEventListener('keydown', onAnyKey);
+  }, [showIntro, dismissIntro]);
 
   // Mount isolated WebGL canvas once so React state updates never tear down the 3D scene
   useEffect(() => {
@@ -120,7 +139,39 @@ export default function App() {
       <div ref={canvasMountRef} className="w-full h-full block" />
 
       {/* Game Shell Overlays */}
-      {hud && hud.phase === 'title' && (
+      {showIntro && (
+        <div
+          onClick={dismissIntro}
+          role="button"
+          tabIndex={0}
+          className="fixed inset-0 z-50 w-screen h-screen bg-black cursor-pointer select-none overflow-hidden"
+        >
+          <video
+            src="/assets/intro_loop.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(180deg, rgba(6,8,10,0.35) 0%, rgba(6,8,10,0.0) 35%, rgba(6,8,10,0.0) 68%, rgba(6,8,10,0.88) 100%)',
+            }}
+          />
+          <div className="absolute bottom-10 inset-x-0 flex flex-col items-center justify-center gap-2 pointer-events-none px-4 text-center">
+            <div className="px-6 py-2.5 bg-[#0a0d10]/78 backdrop-blur-md border border-[#f5c542]/55 shadow-[0_0_28px_rgba(0,0,0,0.85)]">
+              <span className="font-military font-bold text-sm sm:text-base tracking-[0.22em] uppercase text-[#f5c542] animate-pulse">
+                PRESSIONE QUALQUER TECLA OU CLIQUE NA TELA PARA CONTINUAR
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!showIntro && hud && hud.phase === 'title' && (
         <TitleScreen
           hud={hud}
           settings={settings}
