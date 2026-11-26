@@ -64,6 +64,11 @@ export class EnemyAI {
   private mats: ProceduralMaterials;
   private audio: AudioManager;
   private nextId = 1;
+  private invisibleHitMat = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
 
   constructor(
     scene: THREE.Scene,
@@ -178,17 +183,12 @@ export class EnemyAI {
     this.scene.add(model.group);
 
     // Set invisible hitboxes for raycasting; keep procedural meshes hidden once .glb loads
-    const invisibleHitMat = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-    });
     const hitSet = new Set<THREE.Object3D>(model.hitMeshes);
     const proceduralMeshes: THREE.Mesh[] = [];
     model.group.traverse((obj) => {
       if (obj === model.group || obj === model.muzzleFlash) return;
       if (hitSet.has(obj)) {
-        (obj as THREE.Mesh).material = invisibleHitMat;
+        (obj as THREE.Mesh).material = this.invisibleHitMat;
         (obj as THREE.Mesh).castShadow = false;
         return;
       }

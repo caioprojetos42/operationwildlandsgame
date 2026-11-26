@@ -211,13 +211,16 @@ export class ModelAssetManager {
 
     let promise = this.urlLoading.get(url);
     if (!promise) {
+      console.info(`[ModelAssetManager] Loading GLB: ${url}`);
       promise = new Promise<{ group: THREE.Group; animations: THREE.AnimationClip[] } | null>((resolve) => {
         this.loader.load(
           url,
           (gltf) => {
             const model = gltf.scene;
+            let meshCount = 0;
             model.traverse((obj) => {
               if ((obj as THREE.Mesh).isMesh) {
+                meshCount++;
                 const m = obj as THREE.Mesh;
                 m.visible = true;
                 m.castShadow = true;
@@ -244,12 +247,16 @@ export class ModelAssetManager {
               }
             });
             model.updateMatrixWorld(true);
+            console.info(`[ModelAssetManager] Loaded ${url} (${meshCount} meshes, ${(gltf.animations ?? []).length} anims)`);
             const entry = { group: model, animations: gltf.animations ?? [] };
             this.urlCache.set(url, entry);
             resolve(entry);
           },
           undefined,
-          () => resolve(null)
+          (err) => {
+            console.error(`[ModelAssetManager] Failed to load GLB ${url}:`, err);
+            resolve(null);
+          }
         );
       });
       this.urlLoading.set(url, promise);

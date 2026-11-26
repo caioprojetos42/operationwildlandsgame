@@ -781,6 +781,10 @@ export class GameEngine {
     this.openContainerId = null;
     this.world.updateStreaming(this.player.position);
     this.enemies.clearAllEnemies();
+    this.loot.clearTemporaryCorpseLoot();
+    this.vehicles.resetPuffs();
+    this.weapons.resetForNewMatch();
+    this.missions.cancelExtraction();
     if (!enteringTraining) {
       this.enemies.ensureUndergroundGuards();
       this.enemies.spawnIndustrialArenaEnemies(12);

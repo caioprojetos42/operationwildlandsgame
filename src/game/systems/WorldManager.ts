@@ -402,9 +402,15 @@ export class WorldManager {
     this.activeMapMode = mode;
     if (this.industrialMapGroup) {
       this.industrialMapGroup.visible = mode === 'industrial';
+      const idx = this.raycastMeshes.indexOf(this.industrialMapGroup);
+      if (mode === 'industrial' && idx === -1) this.raycastMeshes.push(this.industrialMapGroup);
+      if (mode !== 'industrial' && idx !== -1) this.raycastMeshes.splice(idx, 1);
     }
     if (this.ancientRomeMapGroup) {
       this.ancientRomeMapGroup.visible = mode === 'ancient_rome';
+      const idx = this.raycastMeshes.indexOf(this.ancientRomeMapGroup);
+      if (mode === 'ancient_rome' && idx === -1) this.raycastMeshes.push(this.ancientRomeMapGroup);
+      if (mode !== 'ancient_rome' && idx !== -1) this.raycastMeshes.splice(idx, 1);
     }
 
     // Rebuild allColliders without the inactive map's colliders
@@ -559,7 +565,11 @@ export class WorldManager {
     if (this.industrialLoading || this.industrialMapGroup) return;
     this.industrialLoading = true;
     void this.assetManager.loadByUrl('/models/industrial_map.glb', true).then((res) => {
-      if (!res) return;
+      if (!res) {
+        console.error('[WorldManager] Failed to load /models/industrial_map.glb');
+        this.industrialLoading = false;
+        return;
+      }
       const mapGroup = res.group;
       this.industrialMapGroup = mapGroup;
       mapGroup.visible = this.activeMapMode === 'industrial';
@@ -600,7 +610,9 @@ export class WorldManager {
       mapGroup.updateMatrixWorld(true);
 
       this.scene.add(mapGroup);
-      this.raycastMeshes.push(mapGroup);
+      if (this.activeMapMode === 'industrial' && !this.raycastMeshes.includes(mapGroup)) {
+        this.raycastMeshes.push(mapGroup);
+      }
 
       const minimapRects: { minX: number; maxX: number; minZ: number; maxZ: number; h: number; color: string }[] = [];
       let mapMinX = Infinity;
@@ -727,6 +739,9 @@ export class WorldManager {
           };
         }
       }
+      console.info(
+        `[WorldManager] industrial_map.glb ready: groundY=${groundY.toFixed(2)}, colliders=${this.industrialColliders.length}, bounds=[${mapMinX.toFixed(1)}..${mapMaxX.toFixed(1)}, ${mapMinZ.toFixed(1)}..${mapMaxZ.toFixed(1)}]`
+      );
     });
   }
 
@@ -738,7 +753,11 @@ export class WorldManager {
     if (this.ancientRomeLoading || this.ancientRomeMapGroup) return;
     this.ancientRomeLoading = true;
     void this.assetManager.loadByUrl('/models/ancient_rome_map.glb', true).then((res) => {
-      if (!res) return;
+      if (!res) {
+        console.error('[WorldManager] Failed to load /models/ancient_rome_map.glb');
+        this.ancientRomeLoading = false;
+        return;
+      }
       const mapGroup = res.group;
       this.ancientRomeMapGroup = mapGroup;
       mapGroup.visible = this.activeMapMode === 'ancient_rome';
@@ -778,7 +797,9 @@ export class WorldManager {
       mapGroup.updateMatrixWorld(true);
 
       this.scene.add(mapGroup);
-      this.raycastMeshes.push(mapGroup);
+      if (this.activeMapMode === 'industrial' && !this.raycastMeshes.includes(mapGroup)) {
+        this.raycastMeshes.push(mapGroup);
+      }
 
       const minimapRects: { minX: number; maxX: number; minZ: number; maxZ: number; h: number }[] = [];
       let mapMinX = Infinity;

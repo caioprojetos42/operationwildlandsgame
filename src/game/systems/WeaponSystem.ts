@@ -107,6 +107,134 @@ interface WeaponGlbAnimRig {
   drawAction: THREE.AnimationAction | null;
 }
 
+export interface WeaponGlbTransform {
+  scaleMult?: number;
+  modelRot?: [number, number, number];
+  hipPos?: [number, number, number];
+  hipRot?: [number, number, number];
+  adsPos?: [number, number, number];
+  adsRot?: [number, number, number];
+  maxTopY?: number;
+  disableAnimPose?: boolean;
+}
+
+/**
+ * Per-weapon explicit transform, orientation & ADS calibration.
+ * Guarantees each imported .glb points straight ahead (-Z) and aligns cleanly in ADS without blocking the camera.
+ */
+const WEAPON_GLB_TRANSFORMS: Partial<Record<WeaponId, WeaponGlbTransform>> = {
+  m4a1: {
+    // M4A1 Fire clip frame 0 pitches downward; keep bind pose straight ahead (-Z)
+    disableAnimPose: true,
+    modelRot: [0, Math.PI, 0],
+    hipPos: [0.165, -0.155, -0.31],
+    adsPos: [0.0, -0.095, -0.27],
+    maxTopY: 0.032,
+  },
+  glock17: {
+    // Glock 17 sits lower & slightly further in ADS so the slide/sights never cover the camera
+    hipPos: [0.155, -0.158, -0.35],
+    adsPos: [0.0, -0.118, -0.33],
+    maxTopY: 0.025,
+  },
+  pistol43: {
+    hipPos: [0.155, -0.158, -0.35],
+    adsPos: [0.0, -0.118, -0.33],
+    maxTopY: 0.025,
+  },
+  magnum: {
+    hipPos: [0.155, -0.158, -0.35],
+    adsPos: [0.0, -0.116, -0.33],
+    maxTopY: 0.026,
+  },
+  ak74: {
+    hipPos: [0.165, -0.154, -0.31],
+    adsPos: [0.0, -0.096, -0.27],
+    maxTopY: 0.032,
+  },
+  m4a4: {
+    disableAnimPose: true,
+    hipPos: [0.165, -0.155, -0.31],
+    adsPos: [0.0, -0.095, -0.27],
+    maxTopY: 0.032,
+  },
+  aug: {
+    hipPos: [0.165, -0.155, -0.31],
+    adsPos: [0.0, -0.102, -0.28],
+    maxTopY: 0.032,
+  },
+  scarh: {
+    hipPos: [0.165, -0.155, -0.31],
+    adsPos: [0.0, -0.098, -0.28],
+    maxTopY: 0.032,
+  },
+  fal: {
+    hipPos: [0.165, -0.155, -0.31],
+    adsPos: [0.0, -0.098, -0.28],
+    maxTopY: 0.032,
+  },
+  lmg: {
+    hipPos: [0.175, -0.168, -0.32],
+    adsPos: [0.0, -0.112, -0.29],
+    maxTopY: 0.03,
+  },
+  mp5: {
+    hipPos: [0.162, -0.155, -0.315],
+    adsPos: [0.0, -0.102, -0.29],
+    maxTopY: 0.028,
+  },
+  mp7: {
+    hipPos: [0.162, -0.155, -0.315],
+    adsPos: [0.0, -0.102, -0.29],
+    maxTopY: 0.028,
+  },
+  smg45: {
+    hipPos: [0.162, -0.155, -0.315],
+    adsPos: [0.0, -0.102, -0.29],
+    maxTopY: 0.028,
+  },
+  p9: {
+    hipPos: [0.162, -0.155, -0.315],
+    adsPos: [0.0, -0.102, -0.29],
+    maxTopY: 0.028,
+  },
+  saiga12: {
+    hipPos: [0.165, -0.156, -0.315],
+    adsPos: [0.0, -0.102, -0.28],
+    maxTopY: 0.03,
+  },
+  saiga9: {
+    hipPos: [0.162, -0.155, -0.315],
+    adsPos: [0.0, -0.102, -0.29],
+    maxTopY: 0.028,
+  },
+  m24: {
+    hipPos: [0.168, -0.152, -0.3],
+    adsPos: [0.0, -0.098, -0.28],
+    maxTopY: 0.032,
+  },
+  m700: {
+    hipPos: [0.168, -0.152, -0.3],
+    adsPos: [0.0, -0.098, -0.28],
+    maxTopY: 0.032,
+  },
+  grenadelauncher: {
+    hipPos: [0.17, -0.165, -0.32],
+    adsPos: [0.0, -0.115, -0.3],
+    maxTopY: 0.028,
+  },
+  rpg7: {
+    hipPos: [0.18, -0.165, -0.32],
+    adsPos: [0.0, -0.118, -0.3],
+    maxTopY: 0.028,
+  },
+  butterfly: {
+    hipPos: [0.155, -0.165, -0.36],
+    adsPos: [0.08, -0.145, -0.34],
+    maxTopY: 0.022,
+  },
+};
+
 export class WeaponSystem {
   public weaponRoot = new THREE.Group();
   public currentWeaponId: WeaponId | null = null;
@@ -200,6 +328,15 @@ export class WeaponSystem {
     for (const starterId of ['m4a1', 'm24', 'glock17'] as WeaponId[]) {
       void this.world.assetManager.loadByUrl(WEAPON_GLB_URLS[starterId]);
     }
+
+    // Live per-weapon offset debug helper in browser console
+    (window as unknown as Record<string, unknown>).__WEAPON_DEBUG__ = {
+      getOffset: (id: WeaponId) => WEAPON_GLB_TRANSFORMS[id] ?? {},
+      setOffset: (id: WeaponId, cfg: WeaponGlbTransform) => {
+        WEAPON_GLB_TRANSFORMS[id] = { ...(WEAPON_GLB_TRANSFORMS[id] ?? {}), ...cfg };
+      },
+      list: () => Object.keys(WEAPON_GLB_URLS),
+    };
   }
 
   public equipWeapon(state: WeaponRuntimeState | null) {
@@ -286,6 +423,8 @@ export class WeaponSystem {
             }
           });
 
+          const wCfg = WEAPON_GLB_TRANSFORMS[wId];
+
           // Measure raw gun meshes first to ensure longest horizontal axis faces -Z (never sideways)
           glbGroup.updateMatrixWorld(true);
           const rawGunBox = new THREE.Box3();
@@ -296,7 +435,11 @@ export class WeaponSystem {
           });
           const rawSize = new THREE.Vector3();
           rawGunBox.getSize(rawSize);
-          glbGroup.rotation.y = rawSize.x > rawSize.z * 1.12 ? Math.PI * 0.5 : Math.PI;
+          if (wCfg?.modelRot) {
+            glbGroup.rotation.set(wCfg.modelRot[0], wCfg.modelRot[1], wCfg.modelRot[2]);
+          } else {
+            glbGroup.rotation.y = rawSize.x > rawSize.z * 1.12 ? Math.PI * 0.5 : Math.PI;
+          }
           glbGroup.updateMatrixWorld(true);
 
           // Measure bounding box ONLY from visible gun meshes (excluding hidden arms)
@@ -311,7 +454,7 @@ export class WeaponSystem {
           const maxDim = Math.max(size.x, size.y, size.z, 0.001);
           const cat = WEAPONS[wId].category;
           const targetLen =
-            cat === 'pistol'
+            (cat === 'pistol'
               ? 0.24
               : cat === 'melee'
               ? 0.26
@@ -319,7 +462,7 @@ export class WeaponSystem {
               ? 0.42
               : cat === 'sniper' || cat === 'launcher' || cat === 'lmg'
               ? 0.72
-              : 0.58;
+              : 0.58) * (wCfg?.scaleMult ?? 1.0);
           const normScale = targetLen / maxDim;
           glbGroup.scale.setScalar(normScale);
           glbGroup.updateMatrixWorld(true);
@@ -332,17 +475,18 @@ export class WeaponSystem {
           });
           const scaledCenter = new THREE.Vector3();
           scaledGunBox.getCenter(scaledCenter);
-          // Lock top of every weapon at y <= +0.035 so NONE ever block the center crosshair or sit too high
+          const maxTopY = wCfg?.maxTopY ?? 0.032;
+          // Lock top of every weapon at y <= maxTopY so NONE ever block the center crosshair or sit too high
           glbGroup.position.set(
             -scaledCenter.x,
-            0.035 - scaledGunBox.max.y,
+            maxTopY - scaledGunBox.max.y,
             -scaledCenter.z - (cat === 'pistol' || cat === 'melee' ? 0.08 : 0.06)
           );
 
           targetBuilt.group.add(glbGroup);
           this.glbWeaponIds.add(wId);
 
-          if (res.animations.length > 0) {
+          if (res.animations.length > 0 && !wCfg?.disableAnimPose) {
             const mixer = new THREE.AnimationMixer(glbGroup);
             const isCombinedAllAnims =
               res.animations.length === 1 && /allanims/i.test(res.animations[0].name);
@@ -1022,25 +1166,15 @@ export class WeaponSystem {
     const idleY = Math.sin(this.idlePhase * 2.0) * 0.0012 * idleScale;
     const bobAmp = (1 - this.adsBlend * 0.85) * moveSpeedRatio * (sprinting ? 0.019 : 0.0088);
     const cat = spec?.category ?? 'assault';
-    // Straight, clean Standoff-2 / CODM framing using unified tactical arms + .glb gun
-    const hipX =
-      cat === 'pistol' ? 0.155 : cat === 'smg' ? 0.162 : cat === 'sniper' ? 0.168 : 0.165;
-    const hipY =
-      cat === 'pistol' ? -0.156 : cat === 'sniper' ? -0.148 : cat === 'shotgun' ? -0.154 : -0.152;
-    const hipZ =
-      cat === 'pistol'
-        ? -0.345
-        : cat === 'sniper'
-        ? -0.295
-        : cat === 'smg'
-        ? -0.31
-        : cat === 'shotgun'
-        ? -0.312
-        : -0.305;
-    const hipYawRest = 0.012;
-    const adsX = 0.0;
-    const adsY = this.activeModel ? this.activeModel.adsOffsetY : -0.088;
-    const adsZ = cat === 'pistol' ? -0.29 : -0.27;
+    const wCfg = activeState ? WEAPON_GLB_TRANSFORMS[activeState.weaponId] : undefined;
+    // Per-weapon explicit hip & ADS calibration so every .glb aligns cleanly without blocking the camera
+    const hipX = wCfg?.hipPos?.[0] ?? (cat === 'pistol' ? 0.155 : cat === 'smg' ? 0.162 : cat === 'sniper' ? 0.168 : 0.165);
+    const hipY = wCfg?.hipPos?.[1] ?? (cat === 'pistol' ? -0.158 : cat === 'sniper' ? -0.152 : -0.155);
+    const hipZ = wCfg?.hipPos?.[2] ?? (cat === 'pistol' ? -0.35 : cat === 'sniper' ? -0.3 : -0.31);
+    const hipYawRest = wCfg?.hipRot?.[1] ?? 0.012;
+    const adsX = wCfg?.adsPos?.[0] ?? 0.0;
+    const adsY = wCfg?.adsPos?.[1] ?? (cat === 'pistol' ? -0.118 : -0.098);
+    const adsZ = wCfg?.adsPos?.[2] ?? (cat === 'pistol' ? -0.33 : -0.275);
 
     // 3-Stage Natural Tactical Reload Animation (Weapon Cant + Gloved Left Hand Mag Swap + Bolt Rack)
     let reloadDip = 0;
@@ -1120,11 +1254,13 @@ export class WeaponSystem {
         this.sprintBlend * 0.028,
       THREE.MathUtils.lerp(hipZ, adsZ, this.adsBlend) + this.kickbackZ
     );
-    const hipYawBias = THREE.MathUtils.lerp(hipYawRest, 0, this.adsBlend);
+    const baseRotX = THREE.MathUtils.lerp(wCfg?.hipRot?.[0] ?? 0, wCfg?.adsRot?.[0] ?? 0, this.adsBlend);
+    const baseRotY = THREE.MathUtils.lerp(hipYawRest, wCfg?.adsRot?.[1] ?? 0, this.adsBlend);
+    const baseRotZ = THREE.MathUtils.lerp(wCfg?.hipRot?.[2] ?? 0, wCfg?.adsRot?.[2] ?? 0, this.adsBlend);
     this.weaponRoot.rotation.set(
-      this.kickRotX + reloadPitchX - sprintTilt * 0.48 + this.swayY * 1.45 * swayRotFactor - this.switchAnim * 0.35,
-      hipYawBias + sprintTilt * 0.88 - this.swayX * 1.55 * swayRotFactor,
-      sprintTilt * 0.38 + reloadRollZ + this.recoilRollZ - this.swayX * 2.1 * swayRotFactor
+      baseRotX + this.kickRotX + reloadPitchX - sprintTilt * 0.48 + this.swayY * 1.45 * swayRotFactor - this.switchAnim * 0.35,
+      baseRotY + sprintTilt * 0.88 - this.swayX * 1.55 * swayRotFactor,
+      baseRotZ + sprintTilt * 0.38 + reloadRollZ + this.recoilRollZ - this.swayX * 2.1 * swayRotFactor
     );
 
     // Update physical ballistic projectiles (Sniper rifles)
@@ -1275,6 +1411,44 @@ export class WeaponSystem {
         this.smokeSprites.splice(i, 1);
       }
     }
+  }
+
+  public resetForNewMatch() {
+    this.reloading = false;
+    this.reloadTimer = 0;
+    this.aiming = false;
+    this.adsBlend = 0;
+    this.burstQueue = 0;
+    this.fireCooldown = 0;
+    this.muzzleFlashTimer = 0;
+    this.muzzleLight.intensity = 0;
+    if (this.activeModel) {
+      this.activeModel.muzzleFlash.visible = false;
+    }
+
+    for (const pr of this.projectiles) this.scene.remove(pr.mesh);
+    this.projectiles = [];
+    for (const gr of this.grenades) this.scene.remove(gr.mesh);
+    this.grenades = [];
+    for (const pt of this.particles) {
+      this.scene.remove(pt.mesh);
+      (pt.mesh.material as THREE.Material).dispose();
+    }
+    this.particles = [];
+    for (const sp of this.smokeSprites) {
+      this.scene.remove(sp.sprite);
+      (sp.sprite.material as THREE.Material).dispose();
+    }
+    this.smokeSprites = [];
+    for (const sc of this.shellCasings) this.scene.remove(sc.mesh);
+    this.shellCasings = [];
+    for (const tr of this.tracers) {
+      this.scene.remove(tr.line);
+      tr.line.geometry.dispose();
+    }
+    this.tracers = [];
+    for (const dc of this.decals) this.scene.remove(dc);
+    this.decals = [];
   }
 
   public dispose() {

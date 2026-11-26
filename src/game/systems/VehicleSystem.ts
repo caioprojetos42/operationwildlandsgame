@@ -413,6 +413,14 @@ export class VehicleSystem {
     return { speedRatio, roadkillPos };
   }
 
+  public resetPuffs() {
+    for (const p of this.puffs) {
+      this.scene.remove(p.sprite);
+      (p.sprite.material as THREE.Material).dispose();
+    }
+    this.puffs = [];
+  }
+
   public dispose() {
     for (const v of this.vehicles) {
       this.scene.remove(v.model.group);

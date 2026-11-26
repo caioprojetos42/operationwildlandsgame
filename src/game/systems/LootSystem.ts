@@ -139,6 +139,15 @@ export class LootSystem {
     return removed;
   }
 
+  public clearTemporaryCorpseLoot() {
+    for (const [id, container] of Array.from(this.containers.entries())) {
+      if (container.type === 'enemy_corpse') {
+        this.scene.remove(container.mesh);
+        this.containers.delete(id);
+      }
+    }
+  }
+
   public dispose() {
     for (const c of this.containers.values()) {
       this.scene.remove(c.mesh);
