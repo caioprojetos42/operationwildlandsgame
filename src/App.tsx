@@ -14,25 +14,31 @@ export default function App() {
 
   const [hud, setHud] = useState<HUDState | null>(null);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
-  const [showIntro, setShowIntro] = useState(true);
+  const [introStage, setIntroStage] = useState<'loop' | 'cinematic' | 'done'>('loop');
 
-  const dismissIntro = useCallback(() => {
-    setShowIntro((prev) => {
-      if (!prev) return false;
-      engineRef.current?.audio.unlock();
-      return false;
-    });
+  const advanceToCinematic = useCallback(() => {
+    setIntroStage((prev) => (prev === 'loop' ? 'cinematic' : prev));
+  }, []);
+
+  const finishIntro = useCallback(() => {
+    setIntroStage('done');
+    engineRef.current?.audio.unlock();
   }, []);
 
   useEffect(() => {
-    if (!showIntro) return;
-    const onAnyKey = (e: KeyboardEvent) => {
-      e.preventDefault();
-      dismissIntro();
+    if (introStage === 'done') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (introStage === 'loop') {
+        e.preventDefault();
+        advanceToCinematic();
+      } else if (introStage === 'cinematic' && (e.key === 'Escape' || e.key === ' ')) {
+        e.preventDefault();
+        finishIntro();
+      }
     };
-    window.addEventListener('keydown', onAnyKey);
-    return () => window.removeEventListener('keydown', onAnyKey);
-  }, [showIntro, dismissIntro]);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [introStage, advanceToCinematic, finishIntro]);
 
   // Mount isolated WebGL canvas once so React state updates never tear down the 3D scene
   useEffect(() => {
@@ -139,9 +145,9 @@ export default function App() {
       <div ref={canvasMountRef} className="w-full h-full block" />
 
       {/* Game Shell Overlays */}
-      {showIntro && (
+      {introStage === 'loop' && (
         <div
-          onClick={dismissIntro}
+          onClick={advanceToCinematic}
           role="button"
           tabIndex={0}
           className="fixed inset-0 z-50 w-screen h-screen bg-black cursor-pointer select-none overflow-hidden"
@@ -171,7 +177,28 @@ export default function App() {
         </div>
       )}
 
-      {!showIntro && hud && hud.phase === 'title' && (
+      {introStage === 'cinematic' && (
+        <div className="fixed inset-0 z-50 w-screen h-screen bg-black select-none overflow-hidden">
+          <video
+            src="/assets/intro_cinematic.mp4"
+            autoPlay
+            playsInline
+            muted={settings.muted}
+            onEnded={finishIntro}
+            onError={finishIntro}
+            className="w-full h-full object-cover"
+          />
+          <button
+            type="button"
+            onClick={finishIntro}
+            className="absolute bottom-6 right-6 z-10 px-4 py-2 bg-[#0a0d10]/75 hover:bg-[#141a20]/90 backdrop-blur-md border border-white/20 hover:border-[#f5c542]/70 text-[11px] font-mono-hud tracking-[0.16em] uppercase text-[#dce2e8] hover:text-[#f5c542] cursor-pointer"
+          >
+            PULAR CINEMÁTICA [ESC]
+          </button>
+        </div>
+      )}
+
+      {introStage === 'done' && hud && hud.phase === 'title' && (
         <TitleScreen
           hud={hud}
           settings={settings}
