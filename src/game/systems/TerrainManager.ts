@@ -499,14 +499,21 @@ export class TerrainManager {
           bConcrete /= bSum;
           bAsphalt /= bSum;
 
-          // Blended PBR Albedo
+          // Blended PBR Albedo + Macro Natural Moisture/Sun-Baked Variation (eliminates open-field tiling)
+          float macroMoisture = clamp(0.91 + (macroWaveA * 0.55 + macroWaveB * 0.45) * 0.11, 0.82, 1.12);
           vec3 terrainAlbedo =
-            sSand.rgb * bSand +
+            (sSand.rgb * bSand +
             sDirt.rgb * bDirt +
             sGrass.rgb * bGrass +
             sRock.rgb * bRock +
             sConcrete.rgb * bConcrete +
-            sAsphalt.rgb * bAsphalt;
+            sAsphalt.rgb * bAsphalt) * mix(macroMoisture, 1.0, clamp(bConcrete + bAsphalt, 0.0, 1.0));
+
+          // Geological horizontal strata bands on steep rock cliffs
+          if (bRock > 0.15) {
+            float strata = 0.88 + 0.16 * sin(vTerrainWorldPos.y * 2.1 + macroWaveA * 1.8);
+            terrainAlbedo = mix(terrainAlbedo, terrainAlbedo * strata, smoothstep(0.15, 0.65, bRock));
+          }
 
           // Blended PBR Roughness (stored linearly in alpha channel of each packed texture)
           float terrainRoughness =

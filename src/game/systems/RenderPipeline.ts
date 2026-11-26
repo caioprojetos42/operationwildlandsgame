@@ -115,10 +115,23 @@ const TacticalCinematicShader = {
       // Punchy filmic S-curve micro-contrast in linear space
       col = pow(max(col, vec3(0.0001)), vec3(uContrast));
 
-      // Soft optical edge vignette (keeps HUD corners legible)
+      // Soft optical edge chromatic aberration (center crosshair remains razor-sharp)
       vec2 center = vUv - 0.5;
+      float edgeDist = length(center);
+      float caAmt = smoothstep(0.32, 0.95, edgeDist) * 0.0014;
+      if (caAmt > 0.00005) {
+        vec2 caDir = normalize(center + vec2(0.0001)) * caAmt;
+        col.r = mix(col.r, max(texture2D(tDiffuse, clamp(vUv + caDir, 0.001, 0.999)).r, 0.0), 0.55);
+        col.b = mix(col.b, max(texture2D(tDiffuse, clamp(vUv - caDir, 0.001, 0.999)).b, 0.0), 0.55);
+      }
+
+      // Soft optical edge vignette (keeps HUD corners legible)
       float vig = smoothstep(0.94, 0.28, dot(center, center) * 1.85);
       col *= mix(1.0 - uVignette, 1.0, vig);
+
+      // Subtle 35mm cinema sensor micro-grain (breaks sky banding & adds organic texture)
+      float grain = fract(sin(dot(vUv * uResolution, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+      col = max(col + grain * 0.014 * (1.0 - smoothstep(0.8, 2.2, luma)), vec3(0.0));
 
       gl_FragColor = vec4(col, texel.a);
     }
@@ -292,11 +305,11 @@ export class RenderPipeline {
     // 2. Ground Truth Ambient Occlusion (GTAO) — crisp crevice grounding on buildings, vehicles, rocks & weapons
     this.gtaoPass = new GTAOPass(this.scene, this.camera, safeW, safeH);
     this.gtaoPass.output = GTAOPass.OUTPUT.Default;
-    this.gtaoPass.blendIntensity = 0.54;
+    this.gtaoPass.blendIntensity = 0.62;
     this.gtaoPass.updateGtaoMaterial({
-      radius: 0.42,
-      distanceExponent: 1.55,
-      thickness: 1.1,
+      radius: 0.48,
+      distanceExponent: 1.5,
+      thickness: 1.15,
       distanceFallOff: 1.0,
       scale: 1.0,
       samples: 12,

@@ -433,7 +433,7 @@ export const TacticalHUD: React.FC<TacticalHUDProps> = ({ hud, onResumePointerLo
       </div>
 
       {/* BOTTOM-LEFT: Operator Health, Armor, Stamina & Tactical Gear */}
-      <div className="absolute bottom-5 left-5 w-[265px] bg-[#0c110e]/85 border-l-2 border-[#9fb87a] p-3">
+      <div className="absolute bottom-5 left-5 w-[268px] hud-glass-panel border-l-2 border-[#9fb87a] p-3">
         <div className="flex items-baseline justify-between mb-1.5">
           <div className="flex items-center gap-2">
             <span className="text-2xl font-mono-hud font-bold text-[#eef5eb]">{hud.health}</span>
@@ -486,7 +486,7 @@ export const TacticalHUD: React.FC<TacticalHUDProps> = ({ hud, onResumePointerLo
       {/* BOTTOM-RIGHT: Weapon Ammo / Vehicle Telemetry */}
       <div className="absolute bottom-5 right-5 flex flex-col items-end gap-2">
         {hud.inVehicle ? (
-          <div className="w-[270px] bg-[#0c110e]/88 border-r-2 border-[#7bb4d9] p-3 text-right">
+          <div className="w-[272px] hud-glass-panel border-r-2 border-[#7bb4d9] p-3 text-right">
             <div className="text-xs font-tactical font-bold tracking-wider uppercase text-[#7bb4d9]">
               {hud.vehicleName}
             </div>
@@ -516,7 +516,7 @@ export const TacticalHUD: React.FC<TacticalHUDProps> = ({ hud, onResumePointerLo
             </div>
           </div>
         ) : (
-          <div className="w-[275px] bg-[#0c110e]/85 border-r-2 border-[#c79b4b] p-3 text-right">
+          <div className="w-[276px] hud-glass-panel border-r-2 border-[#c79b4b] p-3 text-right">
             <div className="flex items-center justify-between text-[10px] font-mono-hud text-[#9ba895] mb-0.5">
               <span>{hud.activeWeapon?.suppressed ? 'SILENCIADA' : hud.activeWeaponSpec?.caliber ?? ''}</span>
               <span className="text-[#c79b4b]">[V] {fireMode}</span>
