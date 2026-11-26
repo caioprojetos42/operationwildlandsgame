@@ -1,0 +1,214 @@
+{
+  "version": 2,
+  "description": "Catalogo de assets 3D profissionais (.glb / .gltf) para OPERATION: WILDLANDS. Coloque arquivos .glb reais em /public/models/ e preencha o campo 'url' (ex: '/models/apc_striker.glb') para substituir automaticamente o modelo visual procedural mantendo fisica, colisoes e jogabilidade intactas. Entradas com 'url': null utilizam geometria organica procedural de fallback sem gerar erros 404.",
+  "models": {
+    "vehicle_apc": {
+      "category": "vehicles",
+      "label": "APC Militar 8x8 Striker",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "vehicle_jeep": {
+      "category": "vehicles",
+      "label": "Jipe Tatico 4x4",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "vehicle_pickup": {
+      "category": "vehicles",
+      "label": "Picape Militar",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "vehicle_truck": {
+      "category": "vehicles",
+      "label": "Caminhao de Carga Militar",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "vehicle_car": {
+      "category": "vehicles",
+      "label": "Viatura Militar Leve",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "vehicle_helicopter": {
+      "category": "vehicles",
+      "label": "Helicoptero de Patrulha Militar",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "tree_pine": {
+      "category": "vegetation",
+      "label": "Pinheiro de Montanha / Conifera",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "tree_oak": {
+      "category": "vegetation",
+      "label": "Arvore de Copa / Carvalho de Estepe",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "tree_palm": {
+      "category": "vegetation",
+      "label": "Palmeira de Oasis / Deserto",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "bush_sage": {
+      "category": "vegetation",
+      "label": "Arbusto Deserto / Vegetacao Rasteira",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "grass_tuft": {
+      "category": "vegetation",
+      "label": "Tufo de Grama Seca",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "rock_boulder": {
+      "category": "nature",
+      "label": "Rocha Escarpada Natural",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "rock_outcrop": {
+      "category": "nature",
+      "label": "Afloramento Rochoso Estratificado",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "building_hangar": {
+      "category": "buildings",
+      "label": "Hangar Militar de Aeronaves",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "building_warehouse": {
+      "category": "buildings",
+      "label": "Galpao Logistico Industrial",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "building_tower": {
+      "category": "buildings",
+      "label": "Torre de Controle e Radar Militar",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "building_barracks": {
+      "category": "buildings",
+      "label": "Quartel / Modulo Administrativo",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "building_bunker": {
+      "category": "buildings",
+      "label": "Bunker Fortificado",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "prop_container": {
+      "category": "props",
+      "label": "Conteiner Militar de Carga",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "soldier_trooper": {
+      "category": "characters",
+      "label": "Soldado Operador Tatico",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "soldier_heavy": {
+      "category": "characters",
+      "label": "Soldado Blindado Pesado",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "soldier_sniper": {
+      "category": "characters",
+      "label": "Atirador de Elite / Recon",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "weapon_rifle": {
+      "category": "weapons",
+      "label": "Fuzil de Assalto Tatico",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "weapon_smg": {
+      "category": "weapons",
+      "label": "Submetralhadora Tatica",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "weapon_sniper": {
+      "category": "weapons",
+      "label": "Fuzil de Precisao",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    },
+    "weapon_pistol": {
+      "category": "weapons",
+      "label": "Pistola Tatica",
+      "url": null,
+      "scale": 1.0,
+      "yOffset": 0.0,
+      "rotY": 0.0
+    }
+  }
+}

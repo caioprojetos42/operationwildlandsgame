@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@layer base {
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #0b0e0d;
+    color: #e6ebe5;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+.font-tactical {
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.font-military {
+  font-family: 'Barlow Condensed', 'Chakra Petch', sans-serif;
+}
+
+.font-mono-hud {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom thin tactical scrollbars for inventory & map panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 20, 18, 0.8);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(138, 154, 128, 0.45);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(180, 198, 165, 0.7);
+}
