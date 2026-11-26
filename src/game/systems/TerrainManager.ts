@@ -446,11 +446,11 @@ export class TerrainManager {
           float antiTileMix = clamp(0.24 + distFade * 0.44 + macroWaveA * 0.1, 0.14, 0.72);
 
           // World-space UVs tailored to real physical scale of each material
-          vec2 uvSand = wp * 0.115;
-          vec2 uvDirt = wp * 0.14;
-          vec2 uvGrass = wp * 0.16;
-          vec2 uvRock = wp * 0.085;
-          vec2 uvUrban = wp * 0.125;
+          vec2 uvSand = wp * 0.16;
+          vec2 uvDirt = wp * 0.24;
+          vec2 uvGrass = wp * 0.28;
+          vec2 uvRock = wp * 0.12;
+          vec2 uvUrban = wp * 0.16;
 
           vec4 sSand = sampleAntiTile(uTexSand, uvSand, antiTileMix);
           vec4 nSand = sampleAntiTile(uNormSand, uvSand, antiTileMix * 0.7);
@@ -527,8 +527,8 @@ export class TerrainManager {
             0.99
           );
 
-          // Blended World Tangent-Space Normal (strong crisp relief close up, smooth anti-aliased far away)
-          float normalAtten = mix(1.0, 0.45, distFade);
+          // Blended World Tangent-Space Normal (crisp micro-relief without blobby distortion)
+          float normalAtten = mix(0.42, 0.18, distFade);
           vec3 terrainTanNorm =
             unpackNormalXY(nSand, 1.35 * normalAtten) * bSand +
             unpackNormalXY(nSoilGrass, 1.05 * normalAtten) * (bDirt + bGrass) +

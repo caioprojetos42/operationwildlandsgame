@@ -169,7 +169,7 @@ export class GameEngine {
     this.camera = new THREE.PerspectiveCamera(
       this.settings.fov,
       (container.clientWidth || window.innerWidth) / (container.clientHeight || window.innerHeight),
-      0.1,
+      0.025,
       2200
     );
     this.scene.add(this.camera);
@@ -738,14 +738,13 @@ export class GameEngine {
     } else {
       this.trainingRange.deactivate();
       this.enemies.ensureUndergroundGuards();
-      // Always spawn at a randomized safe map location (both initial launch & respawn!)
-      const randSpot = this.pickRandomSafeSpawn(isRespawn ? 'open_world' : mode);
-      spawnX = randSpot.x;
-      spawnZ = randSpot.z;
-      spawnYaw = randSpot.yaw;
+      // Always deploy directly into the main 3D Industrial Map (0, 0, -48) facing -Z
+      spawnX = 0;
+      spawnZ = 18;
+      spawnYaw = 0;
       deployBanner = isRespawn
-        ? `REINSERÇÃO ALEATÓRIA — ${randSpot.regionName.toUpperCase()}`
-        : `INSERÇÃO TÁTICA — ${randSpot.regionName.toUpperCase()}`;
+        ? 'REINSERÇÃO TÁTICA — COMPLEXO INDUSTRIAL'
+        : 'INSERÇÃO TÁTICA — COMPLEXO INDUSTRIAL';
     }
 
     this.player.resetAtSpawn(spawnX, spawnZ);

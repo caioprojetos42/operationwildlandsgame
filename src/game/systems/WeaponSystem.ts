@@ -248,8 +248,8 @@ export class WeaponSystem {
           scaledBox.getCenter(scaledCenter);
           glbGroup.position.set(
             -scaledCenter.x,
-            -scaledCenter.y - 0.05,
-            -scaledBox.max.z + 0.14
+            -scaledCenter.y - 0.08,
+            -scaledBox.max.z - 0.06
           );
 
           // Hide procedural meshes while preserving muzzlePoint, ejectionPort & muzzleFlash
@@ -909,7 +909,7 @@ export class WeaponSystem {
       ? 0.178
       : 0.176;
     const hipY = hasGlbRig
-      ? -0.02
+      ? -0.04
       : cat === 'pistol'
       ? -0.162
       : cat === 'sniper'
@@ -918,7 +918,7 @@ export class WeaponSystem {
       ? -0.158
       : -0.156;
     const hipZ = hasGlbRig
-      ? -0.02
+      ? -0.08
       : cat === 'pistol'
       ? -0.352
       : cat === 'sniper'

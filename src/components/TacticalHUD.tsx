@@ -195,7 +195,7 @@ export const TacticalHUD: React.FC<TacticalHUDProps> = ({ hud, onResumePointerLo
           <div className="text-[11px] font-tactical font-bold tracking-wider uppercase text-[#edf2e8] truncate">
             {hud.isTrainingMode ? 'ESTANDE DE TIRO' : hud.currentRegion.name}
           </div>
-          <div className="flex items-center justify-between text-[10px] font-mono-hud text-[#9aa894]">
+          <div className="flex items-center justify-between gap-2 text-[10px] font-mono-hud text-[#9aa894]">
             <span>{formatTime(hud.timeOfDay)} · {hud.weather.toUpperCase()}</span>
             {hud.isTrainingMode ? (
               <span className="text-[#68eb94] font-semibold">SEM NPCS</span>
