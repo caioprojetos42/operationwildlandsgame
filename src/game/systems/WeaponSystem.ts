@@ -269,39 +269,81 @@ export class WeaponSystem {
 
           if (res.animations.length > 0) {
             const mixer = new THREE.AnimationMixer(glbGroup);
-            const findClip = (patterns: RegExp[]) =>
-              res.animations.find((c) => patterns.some((p) => p.test(c.name))) ?? null;
-            const idleClip = findClip([/idle/i, /dpose/i]) ?? res.animations[0];
-            const fireClip = findClip([/fire/i, /shot/i, /shoot/i]);
-            const reloadClip = findClip([/reload/i]);
-            const drawClip = findClip([/draw/i, /equip/i]);
+            const isCombinedAllAnims =
+              res.animations.length === 1 && /allanims/i.test(res.animations[0].name);
 
-            const idleAction = idleClip ? mixer.clipAction(idleClip) : null;
-            if (idleAction) idleAction.play();
-            const fireAction = fireClip ? mixer.clipAction(fireClip) : null;
-            if (fireAction) {
-              fireAction.setLoop(THREE.LoopOnce, 1);
-              fireAction.clampWhenFinished = false;
+            if (isCombinedAllAnims) {
+              // Sample frame 0 of combined allanims clip once as static rest pose (never loop the entire timeline)
+              const restPose = mixer.clipAction(res.animations[0]);
+              restPose.play();
+              restPose.time = 0;
+              restPose.paused = true;
+              mixer.update(0);
+              this.weaponAnimRigs.set(wId, {
+                mixer,
+                idleAction: restPose,
+                fireAction: null,
+                reloadAction: null,
+                drawAction: null,
+              });
+            } else {
+              const findClip = (patterns: RegExp[]) =>
+                res.animations.find((c) => patterns.some((p) => p.test(c.name))) ?? null;
+              const idleClip = findClip([/idle/i, /dpose/i]);
+              const fireClip = findClip([/fire/i, /shot_nosight/i, /shot/i, /shoot/i]);
+              const reloadClip = findClip([/reload_fast/i, /reload_easy/i, /reloadnotfull/i, /reload/i]);
+              const drawClip = findClip([/draw/i, /equip/i]);
+
+              let idleAction: THREE.AnimationAction | null = null;
+              if (idleClip) {
+                idleAction = mixer.clipAction(idleClip);
+                idleAction.setLoop(THREE.LoopRepeat, Infinity);
+                idleAction.play();
+              } else if (fireClip) {
+                // Models without an Idle clip (e.g. M4A1): hold frame 0 of Fire as rest pose
+                idleAction = mixer.clipAction(fireClip);
+                idleAction.play();
+                idleAction.time = 0;
+                idleAction.paused = true;
+                mixer.update(0);
+              }
+
+              const fireAction = fireClip && fireClip !== idleClip ? mixer.clipAction(fireClip) : null;
+              if (fireAction) {
+                fireAction.setLoop(THREE.LoopOnce, 1);
+                fireAction.clampWhenFinished = false;
+              }
+              const reloadAction = reloadClip ? mixer.clipAction(reloadClip) : null;
+              if (reloadAction) {
+                reloadAction.setLoop(THREE.LoopOnce, 1);
+                reloadAction.clampWhenFinished = false;
+              }
+              const drawAction = drawClip ? mixer.clipAction(drawClip) : null;
+              if (drawAction) {
+                drawAction.setLoop(THREE.LoopOnce, 1);
+                drawAction.clampWhenFinished = false;
+              }
+              this.weaponAnimRigs.set(wId, { mixer, idleAction, fireAction, reloadAction, drawAction });
             }
-            const reloadAction = reloadClip ? mixer.clipAction(reloadClip) : null;
-            if (reloadAction) {
-              reloadAction.setLoop(THREE.LoopOnce, 1);
-              reloadAction.clampWhenFinished = false;
-            }
-            const drawAction = drawClip ? mixer.clipAction(drawClip) : null;
-            if (drawAction) {
-              drawAction.setLoop(THREE.LoopOnce, 1);
-              drawAction.clampWhenFinished = false;
-            }
-            this.weaponAnimRigs.set(wId, { mixer, idleAction, fireAction, reloadAction, drawAction });
           }
         });
       }
       this.builtModels.set(state.weaponId, built);
     }
     const animRig = this.weaponAnimRigs.get(state.weaponId);
-    if (animRig?.drawAction) {
-      animRig.drawAction.reset().play();
+    if (animRig) {
+      animRig.mixer.stopAllAction();
+      if (animRig.idleAction) {
+        animRig.idleAction.reset().play();
+        if (animRig.idleAction.getClip().name === 'allanims' || !/idle|dpose/i.test(animRig.idleAction.getClip().name)) {
+          animRig.idleAction.time = 0;
+          animRig.idleAction.paused = true;
+          animRig.mixer.update(0);
+        }
+      }
+      if (animRig.drawAction) {
+        animRig.drawAction.reset().play();
+      }
     }
     built.suppressorMesh.visible = state.suppressed;
     built.magMesh.position.copy(built.magRestPos);
@@ -331,6 +373,12 @@ export class WeaponSystem {
     this.audio.playReload('start');
     const animRig = this.weaponAnimRigs.get(state.weaponId);
     if (animRig?.reloadAction) {
+      animRig.fireAction?.stop();
+      animRig.drawAction?.stop();
+      const clipDur = animRig.reloadAction.getClip().duration;
+      if (clipDur > 0.1) {
+        animRig.reloadAction.timeScale = clipDur / Math.max(0.4, spec.reloadTime);
+      }
       animRig.reloadAction.reset().play();
     }
   }
@@ -402,6 +450,8 @@ export class WeaponSystem {
       this.boltKick = 1.0;
       const animRig = this.weaponAnimRigs.get(state.weaponId);
       if (animRig?.fireAction) {
+        animRig.drawAction?.stop();
+        animRig.reloadAction?.stop();
         animRig.fireAction.reset().play();
       }
       if (!state.suppressed) {
