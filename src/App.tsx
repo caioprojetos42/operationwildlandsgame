@@ -15,6 +15,7 @@ export default function App() {
   const [hud, setHud] = useState<HUDState | null>(null);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [introStage, setIntroStage] = useState<'loop' | 'cinematic' | 'done'>('loop');
+  const cinematicRef = useRef<HTMLVideoElement | null>(null);
 
   const advanceToCinematic = useCallback(() => {
     setIntroStage((prev) => (prev === 'loop' ? 'cinematic' : prev));
@@ -24,6 +25,18 @@ export default function App() {
     setIntroStage('done');
     engineRef.current?.audio.unlock();
   }, []);
+
+  useEffect(() => {
+    if (introStage !== 'cinematic') return;
+    const v = cinematicRef.current;
+    if (!v) return;
+    v.currentTime = 0;
+    v.muted = settings.muted;
+    v.play().catch(() => {
+      v.muted = true;
+      v.play().catch(() => {});
+    });
+  }, [introStage, settings.muted]);
 
   useEffect(() => {
     if (introStage === 'done') return;
@@ -180,8 +193,10 @@ export default function App() {
       {introStage === 'cinematic' && (
         <div className="fixed inset-0 z-50 w-screen h-screen bg-black select-none overflow-hidden">
           <video
+            ref={cinematicRef}
             src="/assets/intro_cinematic.mp4"
             autoPlay
+            preload="auto"
             playsInline
             muted={settings.muted}
             onEnded={finishIntro}
