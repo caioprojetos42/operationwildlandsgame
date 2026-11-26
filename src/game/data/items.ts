@@ -30,7 +30,7 @@ export const ITEMS: Record<string, ItemTemplate> = {
     weight: 0.012,
     rarity: 'common',
     value: 6,
-    description: 'Cartuchos padrão OTAN para AR-15, M4A1 e G36K.',
+    description: 'Cartuchos padrão OTAN para M4A1 SOPMOD.',
     stackable: true,
     maxStack: 180,
     caliber: '5.56x45',
@@ -56,7 +56,7 @@ export const ITEMS: Record<string, ItemTemplate> = {
     weight: 0.024,
     rarity: 'uncommon',
     value: 14,
-    description: 'Munição pesada de precisão para SCAR-H, FAL, M24 e M700.',
+    description: 'Munição pesada de precisão para VSK-94, M24 e Barrett .50 Cal.',
     stackable: true,
     maxStack: 100,
     caliber: '7.62x51',
@@ -82,7 +82,7 @@ export const ITEMS: Record<string, ItemTemplate> = {
     weight: 0.014,
     rarity: 'common',
     value: 7,
-    description: 'Cartuchos subsônicos pesados para UMP45 e M1911.',
+    description: 'Cartuchos subsônicos pesados .45 ACP.',
     stackable: true,
     maxStack: 140,
     caliber: '45acp',
@@ -95,7 +95,7 @@ export const ITEMS: Record<string, ItemTemplate> = {
     weight: 0.045,
     rarity: 'common',
     value: 10,
-    description: 'Cartuchos 00 Buckshot para M870 e Saiga-12K.',
+    description: 'Cartuchos 00 Buckshot para Saiga-12K.',
     stackable: true,
     maxStack: 64,
     caliber: '12gauge',
@@ -440,7 +440,7 @@ export function generateContextualLoot(
     items.push(createInventoryEntry('sup_ration', 1 + Math.floor(rand() * 2)));
     items.push(createInventoryEntry('med_bandage', 1 + Math.floor(rand() * 2)));
     if (rand() < 0.45) items.push(createInventoryEntry('val_cash', 1 + Math.floor(rand() * 2)));
-    if (rand() < 0.3) items.push(createInventoryEntry('wpn_m870', 1));
+    if (rand() < 0.3) items.push(createInventoryEntry('wpn_saiga12', 1));
     if (rand() < 0.4) items.push(createInventoryEntry('ammo_12g', 12));
     if (rand() < 0.35) items.push(createInventoryEntry('pack_assault', 1));
   } else {

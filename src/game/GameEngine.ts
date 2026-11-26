@@ -840,8 +840,27 @@ export class GameEngine {
     this.player.position.set(save.playerPos.x, save.playerPos.y, save.playerPos.z);
     this.player.yaw = save.playerPos.yaw;
     this.player.health = Math.max(25, save.health);
-    this.inventory.equipment = save.equipment;
-    this.inventory.items = save.inventory;
+    const sanitizedSlots = save.equipment.slots.map((slot, idx) => {
+      if (!slot) return null;
+      if (WEAPONS[slot.weaponId]) return slot;
+      const fallbackId: WeaponId = idx === 2 ? 'glock17' : 'm4a1';
+      const fbSpec = WEAPONS[fallbackId];
+      return {
+        weaponId: fallbackId,
+        ammoInMag: fbSpec.magSize,
+        fireModeIndex: 0,
+        suppressed: Boolean(fbSpec.suppressedByDefault),
+      };
+    }) as typeof save.equipment.slots;
+    this.inventory.equipment = {
+      ...save.equipment,
+      slots: sanitizedSlots,
+    };
+    this.inventory.items = save.inventory.filter((entry) => {
+      const tpl = ITEMS[entry.templateId];
+      if (!tpl) return false;
+      return !tpl.weaponId || Boolean(WEAPONS[tpl.weaponId]);
+    });
     this.inventory.stash = save.stash ?? [];
     this.missions.loadProgress(save.completedMissionIds, save.missionProgress);
     this.credits = save.credits;
@@ -1423,7 +1442,7 @@ export class GameEngine {
       case 'elite':
         return { name: 'Operador de Elite', weapon: 'Carabina Tática M4' };
       case 'heavy':
-        return { name: 'Soldado Blindado', weapon: 'Fuzil de Batalha SCAR-H' };
+        return { name: 'Soldado Blindado', weapon: 'Carabina VSK-94 Silenciada' };
       case 'guard':
         return { name: 'Guarda de Setor', weapon: 'Submetralhadora MP5' };
       default:

@@ -755,9 +755,9 @@ export const MenuDrawers: React.FC<MenuDrawersProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {[
-                { lv: 40, reward: 'Rifle SCAR-H CQC Desbloqueado', unlocked: true },
+                { lv: 40, reward: 'Carabina VSK-94 Silenciada Desbloqueada', unlocked: true },
                 { lv: 42, reward: 'Capacete Ops-Core FAST', unlocked: true },
-                { lv: 45, reward: 'Sniper M700 Long-Range Elite', unlocked: playerLevel >= 45 },
+                { lv: 45, reward: 'Rifle Barrett .50 Cal Elite', unlocked: playerLevel >= 45 },
               ].map((m) => (
                 <div key={m.lv} className="p-3.5 bg-[#151a1e] border border-white/10 flex items-center justify-between">
                   <div>
@@ -1094,9 +1094,9 @@ export const MenuDrawers: React.FC<MenuDrawersProps> = ({
               {[
                 { tier: 'NÍVEL 10', name: 'Carabina M4A1 SOPMOD', type: 'ARMA PRIMÁRIA' },
                 { tier: 'NÍVEL 20', name: 'Blindagem Plate Carrier III', type: 'PROTEÇÃO' },
-                { tier: 'NÍVEL 30', name: 'Rifle SCAR-H CQC FDE', type: 'RIFLE DE BATALHA' },
+                { tier: 'NÍVEL 30', name: 'Carabina VSK-94 Silenciada', type: 'OPERAÇÕES ESPECIAIS' },
                 { tier: 'NÍVEL 40', name: 'Capacete Ops-Core FAST', type: 'EQUIPAMENTO' },
-                { tier: 'NÍVEL 45', name: 'Sniper M700 Long-Range', type: 'LENDÁRIO' },
+                { tier: 'NÍVEL 45', name: 'Rifle Barrett .50 Cal', type: 'LENDÁRIO' },
                 { tier: 'NÍVEL 50', name: 'Operador Vanguarda Blindada', type: 'RECOMPENSA MÁXIMA' },
               ].map((item) => (
                 <div key={item.tier} className="p-3.5 bg-[#151a1e] border border-[#f5c542]/30">
