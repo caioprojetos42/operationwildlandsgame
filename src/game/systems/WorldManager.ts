@@ -399,6 +399,9 @@ export class WorldManager {
     this.scene.add(desertGroup);
     this.raycastMeshes.push(desertGroup);
 
+    // 0D. External 3D Industrial Map Compound (/models/industrial_map.glb) at Blacksite Center
+    this.buildIndustrialMapLandmark();
+
     // 1. Extraction Zone Helipads + Volumetric Animated Green Smoke Columns
     for (const ep of EXTRACTION_POINTS) {
       const y = this.terrain.getSurfaceHeightAt(ep.x, ep.z);
@@ -520,6 +523,64 @@ export class WorldManager {
     sabotageCoords.forEach(([x, z], idx) => {
       const y = this.terrain.getSurfaceHeightAt(x, z);
       this.spawnExplosiveBarrel(`sabotage_${idx}`, x, y, z, 'global', 'mis_industrial_sabotage');
+    });
+  }
+
+  /**
+   * Loads the external 3D Industrial Map (/models/industrial_map.glb) at Blacksite Center (0, 0, -48),
+   * normalizes scale to ~115m tactical arena footprint, and generates AABB colliders + raycast targets.
+   */
+  private buildIndustrialMapLandmark() {
+    void this.assetManager.loadByUrl('/models/industrial_map.glb').then((res) => {
+      if (!res) return;
+      const mapGroup = res.group;
+      mapGroup.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(mapGroup);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+
+      const maxSpan = Math.max(size.x, size.z, 1);
+      const scale = 115 / maxSpan;
+      mapGroup.scale.setScalar(scale);
+      mapGroup.updateMatrixWorld(true);
+
+      const scaledBox = new THREE.Box3().setFromObject(mapGroup);
+      const center = new THREE.Vector3();
+      scaledBox.getCenter(center);
+
+      mapGroup.position.set(-center.x, -scaledBox.min.y + 0.03, -center.z - 48);
+      mapGroup.updateMatrixWorld(true);
+
+      this.scene.add(mapGroup);
+      this.raycastMeshes.push(mapGroup);
+
+      // Auto-generate AABB colliders for solid walls, containers, and props inside the GLB map
+      const meshBox = new THREE.Box3();
+      const meshSize = new THREE.Vector3();
+      mapGroup.traverse((obj) => {
+        if (!(obj as THREE.Mesh).isMesh) return;
+        const m = obj as THREE.Mesh;
+        m.castShadow = true;
+        m.receiveShadow = true;
+
+        meshBox.setFromObject(m);
+        meshBox.getSize(meshSize);
+        // Skip thin floor planes, tiny props, or massive outer skyboxes
+        if (meshSize.y < 0.55 || meshSize.y > 22) return;
+        if (meshSize.x > 42 && meshSize.z > 42) return;
+        if (meshSize.x < 0.35 && meshSize.z < 0.35) return;
+
+        this.allColliders.push({
+          minX: meshBox.min.x,
+          maxX: meshBox.max.x,
+          minY: meshBox.min.y,
+          maxY: meshBox.max.y,
+          minZ: meshBox.min.z,
+          maxZ: meshBox.max.z,
+          material: 'concrete',
+          sectorKey: 'global',
+        });
+      });
     });
   }
 
@@ -1151,34 +1212,19 @@ export class WorldManager {
     group: THREE.Group,
     colliders: ColliderBox[]
   ) {
-    // Central Blacksite Military Complex (upgraded with Control Tower & Blast Walls!)
+    // Central Blacksite Outer Perimeter (Center [-65..65, -100..10] hosts the 3D Industrial Map GLB!)
     if (sx === -1 && sz === -1) {
-      this.buildHangar(group, -42, -32, 0, key, colliders);
-      this.buildHangar(group, -42, -74, 0, key, colliders);
       this.buildDesertControlTower(group, -95, -18, key, colliders);
       this.buildWarehouse(group, -110, -85, key, colliders);
-      this.buildSecurityCamera(group, -24, 5.2, -32, Math.PI * 0.5, key);
-      this.spawnExplosiveBarrel(`bar_${key}_1`, -22, 0, -48, key);
-      this.spawnExplosiveBarrel(`bar_${key}_2`, -60, 0, -18, key);
-      this.buildContainerCluster(group, -80, -48, key, colliders);
+      this.buildContainerCluster(group, -88, -52, key, colliders);
       this.buildPerimeterFence(group, -124, -55, 64, Math.PI / 2);
-      this.buildLightPole(group, -24, -18);
-      this.buildLightPole(group, -24, -58);
     }
     if (sx === 0 && sz === -1) {
-      this.buildCommandHQ(group, 14, -82, key, colliders);
-      this.buildWarehouse(group, 52, -34, key, colliders);
-      this.buildDesertControlTower(group, 74, -64, key, colliders);
-      this.buildSandbagBunker(group, 28, -22, 0, key, colliders);
-      this.buildSecurityCamera(group, 14, 7.5, -70, 0, key);
-      this.spawnExplosiveBarrel(`bar_${key}_1`, 36, 0, -42, key);
-      this.spawnExplosiveBarrel(`bar_${key}_2`, 64, 0, -24, key);
-      this.buildLightPole(group, 34, -68);
-      this.buildLightPole(group, 14, -46);
-      this.buildJerseyBarrier(group, -6, 0, -14, 0.12, key, colliders);
-      this.buildJerseyBarrier(group, 6, 0, -16, -0.18, key, colliders);
-      this.buildJerseyBarrier(group, 18, 0, -10, 0.35, key, colliders);
-      this.buildBlastWallLine(group, -12, -105, 42, -105, key, colliders);
+      this.buildDesertControlTower(group, 86, -64, key, colliders);
+      this.buildWarehouse(group, 94, -22, key, colliders);
+      this.spawnExplosiveBarrel(`bar_${key}_1`, 72, 0, -42, key);
+      this.buildLightPole(group, 72, -68);
+      this.buildBlastWallLine(group, -58, -110, 58, -110, key, colliders);
     }
     if (sx === 0 && sz === 0) {
       this.buildRailYard(group, 48, 65, key, colliders);
