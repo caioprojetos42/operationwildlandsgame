@@ -210,18 +210,35 @@ export class WeaponSystem {
     let built = this.builtModels.get(state.weaponId);
     if (!built) {
       built = buildWeaponModel(state.weaponId, this.mats);
-      // Immediately hide all procedural gun/arm geometry; only .glb models are rendered
-      const keepNodes = new Set<THREE.Object3D>([
+      // Adjust unified arms: left arm slightly lower on handguard, right trigger hand clearly visible
+      built.leftArmRestPos.y -= 0.016;
+      built.leftArmGroup.position.copy(built.leftArmRestPos);
+      built.rightArmGroup.position.y += 0.012;
+      built.rightArmGroup.position.z -= 0.018;
+
+      // Hide procedural gun meshes while KEEPING unified leftArmGroup, rightArmGroup & FX nodes visible
+      const keepSubtrees = new Set<THREE.Object3D>([
         built.muzzlePoint,
         built.ejectionPort,
         built.muzzleFlash,
+        built.leftArmGroup,
+        built.rightArmGroup,
       ]);
+      const isKept = (obj: THREE.Object3D): boolean => {
+        let cur: THREE.Object3D | null = obj;
+        while (cur) {
+          if (keepSubtrees.has(cur)) return true;
+          cur = cur.parent;
+        }
+        return false;
+      };
       built.group.traverse((obj) => {
-        if (obj === built!.group || keepNodes.has(obj)) return;
+        if (obj === built!.group || isKept(obj)) return;
         if ((obj as THREE.Mesh).isMesh) {
           obj.visible = false;
         }
       });
+
       const glbUrl = WEAPON_GLB_URLS[state.weaponId];
       if (glbUrl) {
         const wId = state.weaponId;
@@ -229,41 +246,57 @@ export class WeaponSystem {
         void this.world.assetManager.loadByUrl(glbUrl).then((res) => {
           if (!res) return;
           const glbGroup = res.group;
-          // All FPS weapon .glb packs are authored facing +Z; rotate 180 deg so barrel & arms face -Z (away from camera)
-          glbGroup.rotation.y = Math.PI;
-          glbGroup.updateMatrixWorld(true);
-          const box = new THREE.Box3().setFromObject(glbGroup);
-          const size = new THREE.Vector3();
-          const center = new THREE.Vector3();
-          box.getSize(size);
-          box.getCenter(center);
-          const maxDim = Math.max(size.x, size.y, size.z, 0.001);
-          const targetLen = WEAPONS[wId].category === 'pistol' ? 0.52 : 0.82;
-          const normScale = targetLen / maxDim;
-          glbGroup.scale.setScalar(normScale);
-          // Re-measure after scale + 180deg rotation so shoulders stay behind camera and barrel extends forward (-Z)
-          glbGroup.updateMatrixWorld(true);
-          const scaledBox = new THREE.Box3().setFromObject(glbGroup);
-          const scaledCenter = new THREE.Vector3();
-          scaledBox.getCenter(scaledCenter);
-          glbGroup.position.set(
-            -scaledCenter.x,
-            -scaledCenter.y - 0.08,
-            -scaledBox.max.z - 0.06
-          );
 
-          // Hide procedural meshes while preserving muzzlePoint, ejectionPort & muzzleFlash
-          const keepNodes = new Set<THREE.Object3D>([
-            targetBuilt.muzzlePoint,
-            targetBuilt.ejectionPort,
-            targetBuilt.muzzleFlash,
-          ]);
-          targetBuilt.group.traverse((obj) => {
-            if (obj === targetBuilt.group || keepNodes.has(obj)) return;
-            if ((obj as THREE.Mesh).isMesh) {
-              obj.visible = false;
+          // Hide the .glb's own built-in arms/hands so ALL 9 weapons use the same unified tactical arms
+          glbGroup.traverse((obj) => {
+            if (!(obj as THREE.Mesh).isMesh) return;
+            const m = obj as THREE.Mesh;
+            const mats = Array.isArray(m.material) ? m.material : [m.material];
+            const matNames = mats.map((mt) => mt?.name || '').join(' ');
+            if (
+              /arm|hand|glove|sleeve|male_04/i.test(m.name) ||
+              /arms|hand_d|glove_d|male_04/i.test(matNames)
+            ) {
+              m.visible = false;
             }
           });
+
+          // Face -Z straight ahead (FPS camera forward)
+          glbGroup.rotation.y = Math.PI;
+          glbGroup.updateMatrixWorld(true);
+
+          // Measure bounding box ONLY from visible gun meshes (excluding hidden arms)
+          const gunBox = new THREE.Box3();
+          glbGroup.traverse((obj) => {
+            if ((obj as THREE.Mesh).isMesh && obj.visible) {
+              gunBox.expandByObject(obj);
+            }
+          });
+          const size = new THREE.Vector3();
+          gunBox.getSize(size);
+          const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+          const cat = WEAPONS[wId].category;
+          const targetLen =
+            cat === 'pistol' ? 0.25 : cat === 'smg' ? 0.44 : cat === 'sniper' ? 0.84 : 0.66;
+          const normScale = targetLen / maxDim;
+          glbGroup.scale.setScalar(normScale);
+          glbGroup.updateMatrixWorld(true);
+
+          const scaledGunBox = new THREE.Box3();
+          glbGroup.traverse((obj) => {
+            if ((obj as THREE.Mesh).isMesh && obj.visible) {
+              scaledGunBox.expandByObject(obj);
+            }
+          });
+          const scaledCenter = new THREE.Vector3();
+          scaledGunBox.getCenter(scaledCenter);
+          // Align gun cleanly inside the unified hands (straight & level)
+          glbGroup.position.set(
+            -scaledCenter.x,
+            -scaledCenter.y - 0.008,
+            -scaledCenter.z - (cat === 'pistol' ? 0.06 : 0.05)
+          );
+
           targetBuilt.group.add(glbGroup);
           this.glbWeaponIds.add(wId);
 
@@ -947,49 +980,25 @@ export class WeaponSystem {
     const idleY = Math.sin(this.idlePhase * 2.0) * 0.0012 * idleScale;
     const bobAmp = (1 - this.adsBlend * 0.85) * moveSpeedRatio * (sprinting ? 0.019 : 0.0088);
     const cat = spec?.category ?? 'assault';
-    const hasGlbRig = activeState ? this.glbWeaponIds.has(activeState.weaponId) : false;
-    // Symmetric 2-arm FPS GLB rigs center around X=0; procedural single-arm rigs sit bottom-right
-    const hipX = hasGlbRig
-      ? 0.02
-      : cat === 'pistol'
-      ? 0.165
-      : cat === 'smg'
-      ? 0.172
-      : cat === 'sniper'
-      ? 0.178
-      : 0.176;
-    const hipY = hasGlbRig
-      ? -0.04
-      : cat === 'pistol'
-      ? -0.162
-      : cat === 'sniper'
-      ? -0.150
-      : cat === 'shotgun'
-      ? -0.158
-      : -0.156;
-    const hipZ = hasGlbRig
-      ? -0.08
-      : cat === 'pistol'
-      ? -0.352
-      : cat === 'sniper'
-      ? -0.292
-      : cat === 'smg'
-      ? -0.312
-      : cat === 'shotgun'
-      ? -0.316
-      : -0.308;
-    const hipYawRest = hasGlbRig
-      ? 0.0
-      : cat === 'pistol'
-      ? 0.032
-      : cat === 'sniper'
-      ? 0.048
-      : cat === 'smg'
-      ? 0.042
-      : 0.045;
-    const adsX = hasGlbRig ? -0.02 : 0.0;
-    const adsY = hasGlbRig ? 0.02 : this.activeModel ? this.activeModel.adsOffsetY : -0.092;
-    const adsZ = hasGlbRig ? 0.04 : cat === 'pistol' ? -0.295 : -0.275;
+    // Straight, clean Standoff-2 / CODM framing using unified tactical arms + .glb gun
+    const hipX =
+      cat === 'pistol' ? 0.155 : cat === 'smg' ? 0.162 : cat === 'sniper' ? 0.168 : 0.165;
+    const hipY =
+      cat === 'pistol' ? -0.156 : cat === 'sniper' ? -0.148 : cat === 'shotgun' ? -0.154 : -0.152;
+    const hipZ =
+      cat === 'pistol'
+        ? -0.345
+        : cat === 'sniper'
+        ? -0.295
+        : cat === 'smg'
+        ? -0.31
+        : cat === 'shotgun'
+        ? -0.312
+        : -0.305;
+    const hipYawRest = 0.012;
+    const adsX = 0.0;
+    const adsY = this.activeModel ? this.activeModel.adsOffsetY : -0.088;
+    const adsZ = cat === 'pistol' ? -0.29 : -0.27;
 
     // 3-Stage Natural Tactical Reload Animation (Weapon Cant + Gloved Left Hand Mag Swap + Bolt Rack)
     let reloadDip = 0;
