@@ -198,12 +198,13 @@ export class ModelAssetManager {
    * Loads and caches a GLB by direct URL (preserving embedded AnimationClips & SkinnedMesh rigs).
    */
   public async loadByUrl(
-    url: string
+    url: string,
+    skipClone = false
   ): Promise<{ group: THREE.Group; animations: THREE.AnimationClip[] } | null> {
     const cached = this.urlCache.get(url);
     if (cached) {
       return {
-        group: cloneSkinned(cached.group) as THREE.Group,
+        group: skipClone ? cached.group : (cloneSkinned(cached.group) as THREE.Group),
         animations: cached.animations,
       };
     }
@@ -257,7 +258,7 @@ export class ModelAssetManager {
     const loaded = await promise;
     if (!loaded) return null;
     return {
-      group: cloneSkinned(loaded.group) as THREE.Group,
+      group: skipClone ? loaded.group : (cloneSkinned(loaded.group) as THREE.Group),
       animations: loaded.animations,
     };
   }

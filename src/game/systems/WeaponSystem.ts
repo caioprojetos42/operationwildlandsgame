@@ -195,10 +195,10 @@ export class WeaponSystem {
     this.muzzleLight.position.set(0.18, -0.05, -0.82);
     this.camera.add(this.muzzleLight);
 
-    // Preload all unique FPS weapon .glb models + unified gloved FPS arms in background
+    // Preload unified FPS arms + 3 starter weapons only (remaining 18 weapons load on demand to prevent startup/rejoin lag)
     void this.world.assetManager.loadByUrl('/models/fp_arms.glb');
-    for (const url of new Set(Object.values(WEAPON_GLB_URLS))) {
-      void this.world.assetManager.loadByUrl(url);
+    for (const starterId of ['m4a1', 'm24', 'glock17'] as WeaponId[]) {
+      void this.world.assetManager.loadByUrl(WEAPON_GLB_URLS[starterId]);
     }
   }
 

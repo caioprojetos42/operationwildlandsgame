@@ -702,8 +702,8 @@ export class GameEngine {
         this.world.timeOfDay = 17.35;
         this.world.weather = 'clear';
       } else if (mode === 'night_raid') {
-        this.world.timeOfDay = 22.5;
-        this.world.weather = 'overcast';
+        this.world.timeOfDay = 21.2;
+        this.world.weather = 'clear';
       } else {
         this.world.timeOfDay = 17.28;
         this.world.weather = 'clear';
@@ -780,11 +780,9 @@ export class GameEngine {
     this.spectatorTargetIndex = 0;
     this.openContainerId = null;
     this.world.updateStreaming(this.player.position);
-    if (enteringTraining) {
-      this.enemies.clearAllEnemies();
-    } else {
-      // Keep immediate 24m drop zone safe, then spawn randomized GLB NPCs across the Industrial Map arena
-      this.enemies.clearEnemiesNear(this.player.position, 24);
+    this.enemies.clearAllEnemies();
+    if (!enteringTraining) {
+      this.enemies.ensureUndergroundGuards();
       this.enemies.spawnIndustrialArenaEnemies(12);
     }
     this.weapons.equipWeapon(this.inventory.getActiveWeapon());

@@ -558,7 +558,7 @@ export class WorldManager {
   private buildIndustrialMapLandmark() {
     if (this.industrialLoading || this.industrialMapGroup) return;
     this.industrialLoading = true;
-    void this.assetManager.loadByUrl('/models/industrial_map.glb').then((res) => {
+    void this.assetManager.loadByUrl('/models/industrial_map.glb', true).then((res) => {
       if (!res) return;
       const mapGroup = res.group;
       this.industrialMapGroup = mapGroup;
@@ -612,7 +612,6 @@ export class WorldManager {
       mapGroup.traverse((obj) => {
         if (!(obj as THREE.Mesh).isMesh) return;
         const m = obj as THREE.Mesh;
-        m.castShadow = true;
         m.receiveShadow = true;
 
         const mats = Array.isArray(m.material) ? m.material : [m.material];
@@ -620,15 +619,18 @@ export class WorldManager {
         for (const mat of mats) {
           if (!mat) continue;
           const std = mat as THREE.MeshStandardMaterial;
+          std.side = THREE.DoubleSide;
           if (std.color) hexColor = `#${std.color.getHexString()}`;
           if (typeof std.envMapIntensity === 'number') std.envMapIntensity = 1.15;
           for (const tex of [std.map, std.normalMap, std.roughnessMap, std.metalnessMap]) {
-            if (tex) tex.anisotropy = 8;
+            if (tex) tex.anisotropy = 4;
           }
         }
 
         meshBox.setFromObject(m);
         meshBox.getSize(meshSize);
+        // Only cast shadows from large structures to keep GPU frame rate high across 1861 meshes
+        m.castShadow = meshSize.y > 2.5 && (meshSize.x > 2 || meshSize.z > 2);
         if (meshSize.x < 120 && meshSize.z < 120 && meshSize.y < 32) {
           mapMinX = Math.min(mapMinX, meshBox.min.x);
           mapMaxX = Math.max(mapMaxX, meshBox.max.x);
@@ -735,7 +737,7 @@ export class WorldManager {
   private buildAncientRomeMapLandmark() {
     if (this.ancientRomeLoading || this.ancientRomeMapGroup) return;
     this.ancientRomeLoading = true;
-    void this.assetManager.loadByUrl('/models/ancient_rome_map.glb').then((res) => {
+    void this.assetManager.loadByUrl('/models/ancient_rome_map.glb', true).then((res) => {
       if (!res) return;
       const mapGroup = res.group;
       this.ancientRomeMapGroup = mapGroup;
@@ -787,15 +789,17 @@ export class WorldManager {
       mapGroup.traverse((obj) => {
         if (!(obj as THREE.Mesh).isMesh) return;
         const m = obj as THREE.Mesh;
-        m.castShadow = true;
+        m.castShadow = false;
         m.receiveShadow = true;
+        m.frustumCulled = false;
 
         const mats = Array.isArray(m.material) ? m.material : [m.material];
         for (const mat of mats) {
           if (!mat) continue;
           const std = mat as THREE.MeshStandardMaterial;
+          std.side = THREE.DoubleSide;
           for (const tex of [std.map, std.normalMap, std.roughnessMap, std.metalnessMap]) {
-            if (tex) tex.anisotropy = 8;
+            if (tex) tex.anisotropy = 4;
           }
         }
 
