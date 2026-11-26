@@ -266,6 +266,14 @@ export interface KillFeedEntry {
   timestamp: number;
 }
 
+export interface MinimapMapData {
+  dataUrl: string;
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
 export interface MinimapEntity {
   x: number;
   z: number;
@@ -337,6 +345,7 @@ export interface HUDState {
   extractionTotalTime: number;
   extractionPoints: ExtractionPointState[];
   minimapEntities: MinimapEntity[];
+  minimapMap: MinimapMapData | null;
   feed: KillFeedEntry[];
   loadedSectorsCount: number;
   fps: number;

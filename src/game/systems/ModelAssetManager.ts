@@ -154,9 +154,28 @@ export class ModelAssetManager {
             model.traverse((obj) => {
               if ((obj as THREE.Mesh).isMesh) {
                 const m = obj as THREE.Mesh;
+                m.visible = true;
                 m.castShadow = true;
                 m.receiveShadow = true;
                 m.frustumCulled = false;
+                const mats = Array.isArray(m.material) ? m.material : [m.material];
+                for (const mat of mats) {
+                  if (!mat) continue;
+                  const std = mat as THREE.MeshPhysicalMaterial;
+                  if (typeof std.transmission === 'number' && std.transmission > 0) {
+                    std.transmission = 0;
+                    std.transparent = false;
+                    std.opacity = 1;
+                    std.depthWrite = true;
+                    std.needsUpdate = true;
+                  }
+                  if (std.transparent && std.opacity < 0.2) {
+                    std.transparent = false;
+                    std.opacity = 1;
+                    std.depthWrite = true;
+                    std.needsUpdate = true;
+                  }
+                }
               }
             });
             root.add(model);
@@ -199,9 +218,28 @@ export class ModelAssetManager {
             model.traverse((obj) => {
               if ((obj as THREE.Mesh).isMesh) {
                 const m = obj as THREE.Mesh;
+                m.visible = true;
                 m.castShadow = true;
                 m.receiveShadow = true;
                 m.frustumCulled = false;
+                const mats = Array.isArray(m.material) ? m.material : [m.material];
+                for (const mat of mats) {
+                  if (!mat) continue;
+                  const std = mat as THREE.MeshPhysicalMaterial;
+                  if (typeof std.transmission === 'number' && std.transmission > 0) {
+                    std.transmission = 0;
+                    std.transparent = false;
+                    std.opacity = 1;
+                    std.depthWrite = true;
+                    std.needsUpdate = true;
+                  }
+                  if (std.transparent && std.opacity < 0.2) {
+                    std.transparent = false;
+                    std.opacity = 1;
+                    std.depthWrite = true;
+                    std.needsUpdate = true;
+                  }
+                }
               }
             });
             model.updateMatrixWorld(true);
@@ -232,11 +270,23 @@ export class ModelAssetManager {
     const clone = await this.loadClone(key);
     if (!clone) return null;
 
+    clone.visible = true;
+    clone.traverse((obj) => {
+      obj.visible = true;
+      if ((obj as THREE.Mesh).isMesh) {
+        const m = obj as THREE.Mesh;
+        m.visible = true;
+        m.frustumCulled = false;
+        m.castShadow = true;
+        m.receiveShadow = true;
+      }
+    });
+
     clone.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(clone);
     const size = new THREE.Vector3();
     box.getSize(size);
-    if (size.y > 0.01 && size.y < 500) {
+    if (Number.isFinite(size.y) && size.y > 0.01 && size.y < 500) {
       const normScale = targetHeight / size.y;
       clone.scale.multiplyScalar(normScale);
       clone.updateMatrixWorld(true);

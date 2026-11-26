@@ -762,8 +762,9 @@ export class GameEngine {
     if (enteringTraining) {
       this.enemies.clearAllEnemies();
     } else {
-      // Keep immediate 34m drop zone safe from patrolling squads
-      this.enemies.clearEnemiesNear(this.player.position, 34);
+      // Keep immediate 24m drop zone safe, then spawn randomized GLB NPCs across the Industrial Map arena
+      this.enemies.clearEnemiesNear(this.player.position, 24);
+      this.enemies.spawnIndustrialArenaEnemies(12);
     }
     this.weapons.equipWeapon(this.inventory.getActiveWeapon());
     this.pushFeed(deployBanner, 'mission');
@@ -1711,9 +1712,6 @@ export class GameEngine {
         });
       }
     }
-    for (const poi of POINTS_OF_INTEREST) {
-      list.push({ x: poi.x, z: poi.z, type: 'poi', label: poi.name });
-    }
     return list;
   }
 
@@ -1798,6 +1796,7 @@ export class GameEngine {
       extractionTotalTime: this.missions.extractionTotalTime,
       extractionPoints: this.missions.extractionPoints,
       minimapEntities: this.isTrainingMode ? [] : this.buildMinimapEntities(),
+      minimapMap: this.isTrainingMode ? null : this.world.industrialMinimapData,
       feed: this.feed.filter((f) => performance.now() - f.timestamp < 5500),
       loadedSectorsCount: this.world.sectors.size,
       fps: this.currentFps,

@@ -6,6 +6,9 @@ import { ProceduralMaterials } from './TextureLibrary';
 import { TerrainManager } from './TerrainManager';
 import { WorldManager } from './WorldManager';
 import { AudioManager } from './AudioManager';
+import { AssetCategory } from './ModelAssetManager';
+
+const SOLDIER_GLB_POOL: AssetCategory[] = ['soldier_trooper', 'soldier_heavy', 'soldier_sniper'];
 
 export interface EnemyUnit {
   id: string;
@@ -13,6 +16,8 @@ export interface EnemyUnit {
   regionId: RegionId;
   sectorKey: string;
   model: BuiltEnemyModel;
+  glbRoot?: THREE.Group;
+  glbBaseY?: number;
   position: THREE.Vector3;
   homePos: THREE.Vector3;
   patrolTarget: THREE.Vector3;
@@ -100,20 +105,45 @@ export class EnemyAI {
         : 3;
 
     for (let i = 0; i < count; i++) {
-      const angle = ((sx * 73 + sz * 31 + i * 97) % 360) * (Math.PI / 180);
-      const radius = 26 + (((sx * 19 + sz * 43 + i * 29) & 0xff) / 255) * 58;
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 22 + Math.random() * 64;
       let ex = cx + Math.cos(angle) * radius;
       let ez = cz + Math.sin(angle) * radius;
 
-      // Keep immediate spawn circle (0, 24) safe for 28m so player isn't insta-killed on load
-      if (Math.hypot(ex - 0, ez - 24) < 36) {
-        ex += 42;
-        ez -= 38;
+      // Keep immediate spawn circle (0, 18) safe for 28m so player isn't insta-killed on load
+      if (Math.hypot(ex - 0, ez - 18) < 28) {
+        ex += (ex >= 0 ? 1 : -1) * 34;
+        ez -= 34;
       }
 
       const ey = this.terrain.getSurfaceHeightAt(ex, ez);
-      const cls = this.pickClassForRegion(region.id, i);
+      const classes: EnemyClass[] = ['infantry', 'guard', 'sniper', 'elite', 'heavy'];
+      const cls = Math.random() < 0.55 ? this.pickClassForRegion(region.id, i) : classes[Math.floor(Math.random() * classes.length)];
       this.spawnEnemy(cls, region.id, sectorKey, new THREE.Vector3(ex, ey, ez));
+    }
+  }
+
+  /**
+   * Spawns randomized NPCs directly across the main Industrial Map arena (0, 0, -48),
+   * each using a randomly selected character .glb model.
+   */
+  public spawnIndustrialArenaEnemies(count = 12) {
+    const classes: EnemyClass[] = ['infantry', 'guard', 'sniper', 'elite', 'heavy'];
+    let spawned = 0;
+    let attempts = 0;
+    while (spawned < count && attempts < count * 5) {
+      attempts++;
+      const ex = (Math.random() - 0.5) * 114; // [-57, +57]
+      const ez = -48 + (Math.random() - 0.5) * 108; // [-102, +6]
+      // Keep immediate spawn (0, 18) safe for 22m
+      if (Math.hypot(ex - 0, ez - 18) < 22) continue;
+
+      const testPos = new THREE.Vector3(ex, this.terrain.getSurfaceHeightAt(ex, ez), ez);
+      if (this.world.resolveHorizontalCollision(testPos, 0.7, 1.8)) continue;
+
+      const cls = classes[Math.floor(Math.random() * classes.length)];
+      this.spawnEnemy(cls, 'blacksite', 'arena', testPos);
+      spawned++;
     }
   }
 
@@ -147,13 +177,14 @@ export class EnemyAI {
     model.group.position.copy(pos);
     this.scene.add(model.group);
 
-    // Immediately hide all old procedural soldier geometry (only .glb soldiers are rendered)
+    // Set invisible hitboxes for raycasting; keep procedural meshes hidden once .glb loads
     const invisibleHitMat = new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: 0,
       depthWrite: false,
     });
     const hitSet = new Set<THREE.Object3D>(model.hitMeshes);
+    const proceduralMeshes: THREE.Mesh[] = [];
     model.group.traverse((obj) => {
       if (obj === model.group || obj === model.muzzleFlash) return;
       if (hitSet.has(obj)) {
@@ -162,20 +193,28 @@ export class EnemyAI {
         return;
       }
       if ((obj as THREE.Mesh).isMesh) {
-        obj.visible = false;
+        const mesh = obj as THREE.Mesh;
+        mesh.visible = false;
+        proceduralMeshes.push(mesh);
       }
     });
 
-    const assetKey =
-      enemyClass === 'heavy'
-        ? 'soldier_heavy'
-        : enemyClass === 'sniper'
-        ? 'soldier_sniper'
-        : 'soldier_trooper';
-    const targetHeight = enemyClass === 'heavy' ? 1.94 : 1.78;
+    // Randomly assign one of the character .glb files to each NPC
+    const assetKey = SOLDIER_GLB_POOL[Math.floor(Math.random() * SOLDIER_GLB_POOL.length)];
+    const targetHeight = assetKey === 'soldier_heavy' ? 1.94 : 1.78;
     void this.world.assetManager.loadNormalizedSoldier(assetKey, targetHeight).then((glbSoldier) => {
-      if (!glbSoldier) return;
+      if (!glbSoldier) {
+        // Fallback: if GLB ever fails to load, reveal procedural soldier so NPC is never invisible
+        for (const m of proceduralMeshes) m.visible = true;
+        return;
+      }
+      glbSoldier.visible = true;
+      glbSoldier.traverse((o) => {
+        o.visible = true;
+      });
       model.group.add(glbSoldier);
+      unit.glbRoot = glbSoldier;
+      unit.glbBaseY = glbSoldier.position.y;
     });
 
     const stats: Record<
@@ -466,6 +505,8 @@ export class EnemyAI {
       const inLoadedChunk =
         unit.sectorKey === 'global'
           ? playerPos.y < -1.5 && distToPlayer <= chunkVisRange
+          : unit.sectorKey === 'arena' || unit.sectorKey === 'extraction'
+          ? distToPlayer <= chunkVisRange
           : this.world.isPositionInLoadedChunk(unit.position.x, unit.position.z);
       const visibleToPlayerInChunk = inLoadedChunk && distToPlayer <= chunkVisRange;
 
@@ -705,6 +746,12 @@ export class EnemyAI {
         unit.position.y = -8.5;
       } else {
         unit.position.y = this.terrain.getSurfaceHeightAt(unit.position.x, unit.position.z);
+      }
+
+      if (unit.glbRoot && unit.glbBaseY !== undefined) {
+        const movingBob = moveSpeed > 0.05 ? Math.abs(Math.sin(unit.walkPhase)) * 0.055 : Math.sin(unit.walkPhase) * 0.008;
+        unit.glbRoot.position.y = unit.glbBaseY + movingBob;
+        unit.glbRoot.rotation.z = moveSpeed > 0.05 ? Math.sin(unit.walkPhase) * 0.035 : 0;
       }
 
       unit.model.group.position.copy(unit.position);

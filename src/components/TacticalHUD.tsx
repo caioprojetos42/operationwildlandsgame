@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { HUDState } from '../game/types';
-import { ROAD_NETWORK } from '../game/data/worldConfig';
 import { WEAPONS } from '../game/data/weapons';
 
 interface TacticalHUDProps {
@@ -27,8 +26,9 @@ function formatTime(hours: number): string {
 
 export const TacticalHUD: React.FC<TacticalHUDProps> = ({ hud, onResumePointerLock }) => {
   const minimapRef = useRef<HTMLCanvasElement | null>(null);
+  const minimapImgRef = useRef<{ url: string; img: HTMLImageElement; ready: boolean } | null>(null);
 
-  // Draw live tactical minimap
+  // Draw live tactical minimap using industrial_map.glb top-down layout
   useEffect(() => {
     const canvas = minimapRef.current;
     if (!canvas) return;
@@ -39,13 +39,34 @@ export const TacticalHUD: React.FC<TacticalHUDProps> = ({ hud, onResumePointerLo
     const h = canvas.height;
     const cx = w / 2;
     const cy = h / 2;
-    const scale = 0.42; // px per meter (~190m radius visible)
+    const scale = hud.minimapMap ? 1.15 : 0.42; // Standoff-style tactical radar zoom over industrial_map.glb
 
-    ctx.fillStyle = '#0d1310';
+    ctx.fillStyle = '#0f141a';
     ctx.fillRect(0, 0, w, h);
 
+    // Draw industrial_map.glb top-down layout aligned 1:1 with player world coordinates
+    if (hud.minimapMap) {
+      if (!minimapImgRef.current || minimapImgRef.current.url !== hud.minimapMap.dataUrl) {
+        const img = new Image();
+        const entry = { url: hud.minimapMap.dataUrl, img, ready: false };
+        img.onload = () => {
+          entry.ready = true;
+        };
+        img.src = hud.minimapMap.dataUrl;
+        minimapImgRef.current = entry;
+      }
+      if (minimapImgRef.current.ready) {
+        const m = hud.minimapMap;
+        const dx = cx + (m.minX - hud.playerX) * scale;
+        const dy = cy + (m.minZ - hud.playerZ) * scale;
+        const dw = (m.maxX - m.minX) * scale;
+        const dh = (m.maxZ - m.minZ) * scale;
+        ctx.drawImage(minimapImgRef.current.img, dx, dy, dw, dh);
+      }
+    }
+
     // Subtle tactical radar rings
-    ctx.strokeStyle = 'rgba(130, 155, 120, 0.16)';
+    ctx.strokeStyle = 'rgba(130, 170, 200, 0.14)';
     ctx.lineWidth = 1;
     for (const r of [26, 52, 76]) {
       ctx.beginPath();
@@ -53,28 +74,10 @@ export const TacticalHUD: React.FC<TacticalHUDProps> = ({ hud, onResumePointerLo
       ctx.stroke();
     }
 
-    // Rotate map relative to player heading (North-up with player cone rotated)
     const toMap = (wx: number, wz: number): [number, number] => [
       cx + (wx - hud.playerX) * scale,
       cy + (wz - hud.playerZ) * scale,
     ];
-
-    // Draw roads
-    for (const seg of ROAD_NETWORK) {
-      const [x1, y1] = toMap(seg.x1, seg.z1);
-      const [x2, y2] = toMap(seg.x2, seg.z2);
-      ctx.strokeStyle =
-        seg.kind === 'rail'
-          ? 'rgba(190, 145, 95, 0.5)'
-          : seg.kind === 'asphalt'
-          ? 'rgba(140, 152, 148, 0.55)'
-          : 'rgba(155, 132, 95, 0.42)';
-      ctx.lineWidth = seg.kind === 'rail' ? 1.5 : 3;
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    }
 
     // Draw entities
     for (const ent of hud.minimapEntities) {
@@ -128,7 +131,7 @@ export const TacticalHUD: React.FC<TacticalHUDProps> = ({ hud, onResumePointerLo
     ctx.closePath();
     ctx.fill();
     ctx.restore();
-  }, [hud.playerX, hud.playerZ, hud.playerYaw, hud.minimapEntities]);
+  }, [hud.playerX, hud.playerZ, hud.playerYaw, hud.minimapEntities, hud.minimapMap]);
 
   const headingDeg = (((-hud.playerYaw * 180) / Math.PI) % 360 + 360) % 360;
   const trackedMission = hud.missions.find((m) => m.id === hud.trackedMissionId && !m.completed);

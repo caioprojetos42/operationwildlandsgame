@@ -6,7 +6,7 @@ import {
   SECTOR_SIZE,
   WORLD_HALF_SIZE,
 } from '../data/worldConfig';
-import { GraphicsPreset, RegionId, WeatherType } from '../types';
+import { GraphicsPreset, MinimapMapData, RegionId, WeatherType } from '../types';
 import { getRegionAt } from '../data/worldConfig';
 import { ProceduralMaterials } from './TextureLibrary';
 import { TerrainManager, distToSegment } from './TerrainManager';
@@ -97,6 +97,7 @@ export class WorldManager {
   public mats: ProceduralMaterials;
   public loot: LootSystem;
   public assetManager: ModelAssetManager;
+  public industrialMinimapData: MinimapMapData | null = null;
 
   public sectors = new Map<string, SectorData>();
   public allColliders: ColliderBox[] = [];
@@ -525,7 +526,7 @@ export class WorldManager {
       box.getSize(size);
 
       const maxSpan = Math.max(size.x, size.z, 1);
-      const scale = 115 / maxSpan;
+      const scale = 136 / maxSpan;
       mapGroup.scale.setScalar(scale);
       mapGroup.updateMatrixWorld(true);
 
@@ -542,7 +543,7 @@ export class WorldManager {
         if (!(obj as THREE.Mesh).isMesh) return;
         meshBox.setFromObject(obj);
         meshBox.getSize(meshSize);
-        if (meshSize.y > 0.05 && meshSize.y < 18 && meshSize.x < 90 && meshSize.z < 90) {
+        if (meshSize.y > 0.05 && meshSize.y < 18 && meshSize.x < 105 && meshSize.z < 105) {
           floorCandidates.push(meshBox.min.y);
         }
       });
@@ -558,19 +559,53 @@ export class WorldManager {
       this.scene.add(mapGroup);
       this.raycastMeshes.push(mapGroup);
 
-      // Auto-generate AABB colliders for solid walls, containers, and props inside the GLB map
+      const minimapRects: { minX: number; maxX: number; minZ: number; maxZ: number; h: number; color: string }[] = [];
+      let mapMinX = Infinity;
+      let mapMaxX = -Infinity;
+      let mapMinZ = Infinity;
+      let mapMaxZ = -Infinity;
+
+      // Auto-generate AABB colliders + enhance textures + collect real geometry for tactical minimap
       mapGroup.traverse((obj) => {
         if (!(obj as THREE.Mesh).isMesh) return;
         const m = obj as THREE.Mesh;
         m.castShadow = true;
         m.receiveShadow = true;
 
+        const mats = Array.isArray(m.material) ? m.material : [m.material];
+        let hexColor = '#4a5662';
+        for (const mat of mats) {
+          if (!mat) continue;
+          const std = mat as THREE.MeshStandardMaterial;
+          if (std.color) hexColor = `#${std.color.getHexString()}`;
+          if (typeof std.envMapIntensity === 'number') std.envMapIntensity = 1.15;
+          for (const tex of [std.map, std.normalMap, std.roughnessMap, std.metalnessMap]) {
+            if (tex) tex.anisotropy = 8;
+          }
+        }
+
         meshBox.setFromObject(m);
         meshBox.getSize(meshSize);
-        // Skip thin floor planes, tiny props, or massive outer skyboxes
+        if (meshSize.x < 120 && meshSize.z < 120 && meshSize.y < 32) {
+          mapMinX = Math.min(mapMinX, meshBox.min.x);
+          mapMaxX = Math.max(mapMaxX, meshBox.max.x);
+          mapMinZ = Math.min(mapMinZ, meshBox.min.z);
+          mapMaxZ = Math.max(mapMaxZ, meshBox.max.z);
+        }
+
+        // Skip thin floor planes, tiny props, or massive outer skyboxes for colliders/walls
         if (meshSize.y < 0.55 || meshSize.y > 22) return;
-        if (meshSize.x > 42 && meshSize.z > 42) return;
+        if (meshSize.x > 48 && meshSize.z > 48) return;
         if (meshSize.x < 0.35 && meshSize.z < 0.35) return;
+
+        minimapRects.push({
+          minX: meshBox.min.x,
+          maxX: meshBox.max.x,
+          minZ: meshBox.min.z,
+          maxZ: meshBox.max.z,
+          h: meshSize.y,
+          color: hexColor,
+        });
 
         this.allColliders.push({
           minX: meshBox.min.x,
@@ -583,6 +618,66 @@ export class WorldManager {
           sectorKey: 'global',
         });
       });
+
+      // Render crisp Standoff-style top-down tactical minimap directly from industrial_map.glb geometry
+      if (Number.isFinite(mapMinX) && mapMaxX > mapMinX && mapMaxZ > mapMinZ) {
+        const pad = 6;
+        const bMinX = mapMinX - pad;
+        const bMaxX = mapMaxX + pad;
+        const bMinZ = mapMinZ - pad;
+        const bMaxZ = mapMaxZ + pad;
+        const cvs = document.createElement('canvas');
+        cvs.width = 512;
+        cvs.height = 512;
+        const ctx = cvs.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#121820';
+          ctx.fillRect(0, 0, 512, 512);
+
+          const toPxX = (wx: number) => ((wx - bMinX) / (bMaxX - bMinX)) * 512;
+          const toPxY = (wz: number) => ((wz - bMinZ) / (bMaxZ - bMinZ)) * 512;
+
+          // Playable floor footprint
+          ctx.fillStyle = '#202833';
+          ctx.fillRect(toPxX(mapMinX), toPxY(mapMinZ), toPxX(mapMaxX) - toPxX(mapMinX), toPxY(mapMaxZ) - toPxY(mapMinZ));
+
+          // Subtle tactical grid
+          ctx.strokeStyle = 'rgba(130, 155, 180, 0.08)';
+          ctx.lineWidth = 1;
+          for (let g = 0; g <= 512; g += 32) {
+            ctx.beginPath();
+            ctx.moveTo(g, 0);
+            ctx.lineTo(g, 512);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, g);
+            ctx.lineTo(512, g);
+            ctx.stroke();
+          }
+
+          // Structures sorted by height (low cover first, tall buildings on top)
+          minimapRects.sort((a, b) => a.h - b.h);
+          for (const r of minimapRects) {
+            const rx = toPxX(r.minX);
+            const ry = toPxY(r.minZ);
+            const rw = Math.max(2, toPxX(r.maxX) - rx);
+            const rh = Math.max(2, toPxY(r.maxZ) - ry);
+            ctx.fillStyle = r.h > 3.5 ? '#394654' : '#2d3742';
+            ctx.fillRect(rx, ry, rw, rh);
+            ctx.strokeStyle = r.h > 3.5 ? 'rgba(180, 200, 220, 0.45)' : 'rgba(140, 160, 180, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(rx, ry, rw, rh);
+          }
+
+          this.industrialMinimapData = {
+            dataUrl: cvs.toDataURL('image/png'),
+            minX: bMinX,
+            maxX: bMaxX,
+            minZ: bMinZ,
+            maxZ: bMaxZ,
+          };
+        }
+      }
     });
   }
 

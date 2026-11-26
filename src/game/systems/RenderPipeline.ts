@@ -21,15 +21,15 @@ const TacticalCinematicShader = {
   uniforms: {
     tDiffuse: { value: null as THREE.Texture | null },
     uResolution: { value: new THREE.Vector2(1280, 720) },
-    uSharpen: { value: 0.34 },
+    uSharpen: { value: 0.38 },
     uSunScreenPos: { value: new THREE.Vector2(0.5, 0.5) },
     uSunGlare: { value: 0.0 },
-    uGodRayStrength: { value: 0.44 },
-    uSunColor: { value: new THREE.Color(0xffc982) },
-    uContrast: { value: 1.09 },
-    uSaturation: { value: 1.18 },
-    uVignette: { value: 0.16 },
-    uWarmth: { value: 0.075 },
+    uGodRayStrength: { value: 0.32 },
+    uSunColor: { value: new THREE.Color(0xffe0b2) },
+    uContrast: { value: 1.06 },
+    uSaturation: { value: 1.12 },
+    uVignette: { value: 0.08 },
+    uWarmth: { value: 0.035 },
   },
   vertexShader: `
     varying vec2 vUv;
@@ -115,23 +115,23 @@ const TacticalCinematicShader = {
       // Punchy filmic S-curve micro-contrast in linear space
       col = pow(max(col, vec3(0.0001)), vec3(uContrast));
 
-      // Soft optical edge chromatic aberration (center crosshair remains razor-sharp)
+      // Minimal optical edge chromatic aberration (Standoff 2 crisp clarity)
       vec2 center = vUv - 0.5;
       float edgeDist = length(center);
-      float caAmt = smoothstep(0.32, 0.95, edgeDist) * 0.0014;
+      float caAmt = smoothstep(0.45, 0.98, edgeDist) * 0.0004;
       if (caAmt > 0.00005) {
         vec2 caDir = normalize(center + vec2(0.0001)) * caAmt;
-        col.r = mix(col.r, max(texture2D(tDiffuse, clamp(vUv + caDir, 0.001, 0.999)).r, 0.0), 0.55);
-        col.b = mix(col.b, max(texture2D(tDiffuse, clamp(vUv - caDir, 0.001, 0.999)).b, 0.0), 0.55);
+        col.r = mix(col.r, max(texture2D(tDiffuse, clamp(vUv + caDir, 0.001, 0.999)).r, 0.0), 0.45);
+        col.b = mix(col.b, max(texture2D(tDiffuse, clamp(vUv - caDir, 0.001, 0.999)).b, 0.0), 0.45);
       }
 
-      // Soft optical edge vignette (keeps HUD corners legible)
-      float vig = smoothstep(0.94, 0.28, dot(center, center) * 1.85);
+      // Clean subtle edge vignette
+      float vig = smoothstep(0.96, 0.32, dot(center, center) * 1.7);
       col *= mix(1.0 - uVignette, 1.0, vig);
 
-      // Subtle 35mm cinema sensor micro-grain (breaks sky banding & adds organic texture)
+      // Ultra-light sensor micro-grain (keeps competitive clarity razor-sharp)
       float grain = fract(sin(dot(vUv * uResolution, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
-      col = max(col + grain * 0.014 * (1.0 - smoothstep(0.8, 2.2, luma)), vec3(0.0));
+      col = max(col + grain * 0.003 * (1.0 - smoothstep(0.8, 2.2, luma)), vec3(0.0));
 
       gl_FragColor = vec4(col, texel.a);
     }
@@ -159,7 +159,7 @@ export class RenderPipeline {
   private envTexture: THREE.Texture | null = null;
   private preset: GraphicsPreset = 'HIGH';
   private useComposer = false;
-  private currentExposure = 1.12;
+  private currentExposure = 1.18;
 
   constructor(
     renderer: THREE.WebGLRenderer,
