@@ -19,12 +19,40 @@ export class AudioManager {
 
   private settings: GameSettings;
   private initialized = false;
+  private lobbyAudio: HTMLAudioElement | null = null;
+  private lobbyShouldPlay = true;
 
   constructor(settings: GameSettings) {
     this.settings = { ...settings };
+    if (typeof Audio !== 'undefined') {
+      const audio = new Audio('/audio/lobby_theme.mp3');
+      audio.loop = true;
+      audio.preload = 'auto';
+      audio.volume = settings.muted ? 0 : Math.min(1, settings.masterVolume * settings.ambientVolume * 0.65);
+      this.lobbyAudio = audio;
+    }
+  }
+
+  public setLobbyMusicActive(active: boolean) {
+    this.lobbyShouldPlay = active;
+    if (!this.lobbyAudio) return;
+    if (active) {
+      this.lobbyAudio.volume = this.settings.muted
+        ? 0
+        : Math.min(1, this.settings.masterVolume * this.settings.ambientVolume * 0.65);
+      if (this.lobbyAudio.paused) {
+        this.lobbyAudio.play().catch(() => {});
+      }
+    } else {
+      this.lobbyAudio.pause();
+      this.lobbyAudio.currentTime = 0;
+    }
   }
 
   public unlock() {
+    if (this.lobbyShouldPlay && this.lobbyAudio && this.lobbyAudio.paused) {
+      this.lobbyAudio.play().catch(() => {});
+    }
     if (!this.initialized) {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
@@ -49,6 +77,11 @@ export class AudioManager {
 
   public applySettings(settings: GameSettings) {
     this.settings = { ...settings };
+    if (this.lobbyAudio) {
+      this.lobbyAudio.volume = settings.muted
+        ? 0
+        : Math.min(1, settings.masterVolume * settings.ambientVolume * 0.65);
+    }
     if (!this.ctx || !this.masterGain || !this.sfxGain || !this.ambientGain) return;
     const now = this.ctx.currentTime;
     this.masterGain.gain.setTargetAtTime(settings.muted ? 0 : settings.masterVolume, now, 0.03);

@@ -326,103 +326,100 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-20 w-screen h-screen overflow-hidden select-none pointer-events-auto bg-[#0c0f12] text-white">
+    <div className="fixed inset-0 z-20 w-screen h-screen overflow-hidden select-none pointer-events-auto bg-[#090c0f] text-white flex flex-col justify-between">
       {/* === FULL-BLEED CINEMATIC OPERATOR & MILITARY BASE KEY ART === */}
-      <div className="absolute inset-0 overflow-hidden bg-gradient-to-br from-[#1b1f22] via-[#2b2419] to-[#0e1114]">
+      <div className="absolute inset-0 overflow-hidden bg-[#0a0d10]">
         <img
           src={heroOperatorImg}
           alt="Operador Militar Operation: Wildlands"
           referrerPolicy="no-referrer"
-          className="w-full h-full object-cover object-[50%_28%] scale-[1.15]"
+          className="w-full h-full object-cover object-[52%_24%] scale-[1.08]"
         />
-        {/* Subtle left & right readability scrims keeping center operator crisp and unobstructed */}
+        {/* Clean asymmetric vignette & bottom readability gradient */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              'linear-gradient(90deg, rgba(10,13,16,0.72) 0%, rgba(10,13,16,0.28) 26%, rgba(10,13,16,0.0) 48%, rgba(10,13,16,0.18) 74%, rgba(10,13,16,0.68) 100%)',
+              'radial-gradient(circle at 52% 42%, rgba(10,13,16,0.0) 18%, rgba(8,10,13,0.58) 72%, rgba(6,8,10,0.88) 100%)',
           }}
         />
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              'linear-gradient(180deg, rgba(8,10,12,0.52) 0%, rgba(8,10,12,0.0) 22%, rgba(8,10,12,0.0) 76%, rgba(8,10,12,0.82) 100%)',
+              'linear-gradient(180deg, rgba(7,9,12,0.84) 0%, rgba(7,9,12,0.18) 16%, rgba(7,9,12,0.0) 68%, rgba(7,9,12,0.92) 100%)',
           }}
         />
       </div>
 
-      {/* === TOP HEADER BAR: BRAND LOGO (LEFT) + PROFILE / CP / SOCIAL (RIGHT) === */}
-      <div className="relative z-20 flex items-start justify-between px-4 lg:px-6 pt-3">
-        {/* Top-Left Brand Lockup: Jagged Alpine Peak + OPERATION: WILDLANDS */}
-        <div className="flex items-center select-none drop-shadow-[0_4px_14px_rgba(0,0,0,0.92)]">
-          <svg
-            viewBox="0 0 380 96"
-            className="w-[270px] sm:w-[310px] lg:w-[340px] h-auto"
-            role="img"
-            aria-label="OPERATION: WILDLANDS"
+      {/* === TOP COMMAND HEADER: BRAND + HORIZONTAL TACTICAL TABS + PROFILE / CP === */}
+      <header className="relative z-20 flex items-center justify-between gap-3 px-4 lg:px-7 h-[68px] bg-[#0a0d10]/72 backdrop-blur-md border-b border-white/10">
+        {/* Left: Compact Tactical Brand Lockup */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-gradient-to-br from-[#f6c945] to-[#b57c12] flex items-center justify-center shadow-[0_0_16px_rgba(245,197,66,0.35)]">
+              <svg viewBox="0 0 32 32" className="w-6 h-6 text-[#0b0d10]" fill="currentColor">
+                <polygon points="2,24 10,11 15,16 21,6 30,24" />
+              </svg>
+            </div>
+            <div className="leading-none">
+              <div className="text-[10px] font-mono-hud tracking-[0.26em] text-[#b8c2c8] uppercase">
+                OPERATION
+              </div>
+              <div className="font-military font-extrabold text-[22px] tracking-[0.06em] text-[#f5c542] uppercase leading-none mt-0.5">
+                WILDLANDS
+              </div>
+            </div>
+          </div>
+
+          {/* Lobby Music / Audio Pill */}
+          <button
+            onClick={onToggleMute}
+            title={muted ? 'Ativar áudio e música do lobby' : 'Silenciar áudio'}
+            className="hidden xl:flex items-center gap-2 ml-3 px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-mono-hud text-[#cbd3d9] cursor-pointer"
           >
-            <defs>
-              <linearGradient id="wlGoldText" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#f9d86c" />
-                <stop offset="48%" stopColor="#d99d29" />
-                <stop offset="100%" stopColor="#946211" />
-              </linearGradient>
-              <linearGradient id="wlMountainSnow" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ffffff" />
-                <stop offset="100%" stopColor="#b9c0c6" />
-              </linearGradient>
-            </defs>
-            {/* Mountain Silhouette */}
-            <g transform="translate(0, 6)">
-              <polygon points="4,76 46,24 68,42 104,6 144,44 166,30 198,76" fill="#171a1d" stroke="#0b0d0f" strokeWidth="2" />
-              {/* Snow-lit sunlit facets */}
-              <polygon points="104,6 88,28 97,32 106,20 116,35 129,28" fill="url(#wlMountainSnow)" />
-              <polygon points="46,24 33,44 43,43 49,33 58,42" fill="url(#wlMountainSnow)" />
-              <polygon points="104,6 112,26 105,36 125,46 144,44" fill="#d5dce1" opacity="0.65" />
-              <path d="M18,74 L58,34 L66,46 L42,74 Z" fill="#cfd6db" opacity="0.55" />
-            </g>
-            {/* OPERATION: */}
-            <text
-              x="166"
-              y="39"
-              fill="#f3f5f6"
-              fontFamily="'Barlow Condensed', 'Chakra Petch', sans-serif"
-              fontSize="27"
-              fontWeight="800"
-              letterSpacing="2.2"
-              stroke="#0a0c0e"
-              strokeWidth="3.5"
-              paintOrder="stroke"
-            >
-              OPERATION:
-            </text>
-            {/* WILDLANDS */}
-            <text
-              x="104"
-              y="84"
-              fill="url(#wlGoldText)"
-              fontFamily="'Barlow Condensed', 'Chakra Petch', sans-serif"
-              fontSize="54"
-              fontWeight="800"
-              letterSpacing="1.6"
-              stroke="#121417"
-              strokeWidth="5"
-              paintOrder="stroke"
-            >
-              WILDLANDS
-            </text>
-          </svg>
+            {muted ? (
+              <VolumeX className="w-3.5 h-3.5 text-[#e84b3c]" />
+            ) : (
+              <Volume2 className="w-3.5 h-3.5 text-[#f5c542]" />
+            )}
+            <span className="uppercase tracking-wider">
+              {muted ? 'MUDO' : 'OST: GUERILLA TACTICS'}
+            </span>
+          </button>
         </div>
 
-        {/* Top-Right Profile, CP Balance, Notification Bell & Squad */}
-        <div className="flex items-center gap-2 pt-0.5">
-          {/* Player Profile Card */}
+        {/* Center: Horizontal Navigation Tabs (AAA CODM / Standoff 2 Top Rail) */}
+        <nav className="hidden md:flex items-center h-full gap-1 overflow-x-auto" aria-label="Menu principal">
+          {navItems.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`relative h-full px-3 lg:px-3.5 flex items-center gap-2 text-xs font-military font-bold tracking-[0.08em] uppercase transition-colors cursor-pointer shrink-0 ${
+                  isActive
+                    ? 'text-[#ffd85c] bg-white/[0.06]'
+                    : 'text-[#bfc7ce] hover:text-white hover:bg-white/[0.03]'
+                }`}
+              >
+                <span className={isActive ? 'text-[#ffd85c]' : 'text-[#8e98a0]'}>{item.icon}</span>
+                <span>{item.label}</span>
+                {isActive && (
+                  <span className="absolute bottom-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-[#f5c542] to-transparent shadow-[0_0_10px_#f5c542]" />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Right: Profile, CP Balance, Notification Bell & Squad */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setActiveTab('progressao')}
-            className="relative flex items-center gap-3 pl-2 pr-4 py-1.5 bg-[#151a1e]/90 hover:bg-[#1c2329]/95 border border-white/15 hover:border-[#f5c542]/60 transition-colors cursor-pointer"
+            className="flex items-center gap-2.5 pl-1.5 pr-3 py-1 bg-white/[0.04] hover:bg-white/[0.09] border border-white/12 hover:border-[#f5c542]/50 cursor-pointer"
           >
-            <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-[#c8a350] shadow-[0_0_12px_rgba(245,197,66,0.3)] shrink-0 bg-[#1a1f24]">
+            <div className="w-9 h-9 overflow-hidden border border-[#c8a350] shrink-0 bg-[#1a1f24]">
               <img
                 src={operatorAvatarImg}
                 alt={callsign}
@@ -430,45 +427,36 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="text-left min-w-[150px]">
+            <div className="text-left hidden sm:block min-w-[118px]">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-sm text-white leading-none">{callsign || 'CaioGamer'}</span>
+                <span className="font-semibold text-xs text-white leading-none">{callsign || 'CaioGamer'}</span>
+                <span className="text-[10px] font-mono-hud text-[#f5c542]">NV.{playerLevel}</span>
               </div>
-              <div className="text-[11px] font-military font-semibold tracking-wider text-[#cfd6dc] uppercase mt-0.5 leading-none">
-                NÍVEL {playerLevel}
-              </div>
-              <div className="flex items-center gap-2 mt-1.5">
-                <div className="w-[74px] h-[6px] bg-[#0b0e10] border border-white/10 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#d4961c] to-[#f8cd4c]"
-                    style={{ width: `${xpPercent}%` }}
-                  />
-                </div>
-                <span className="text-[10px] font-mono-hud text-[#dce2e6] leading-none">
-                  {currentXpDisplay.toLocaleString('pt-BR')} / {nextLevelXp.toLocaleString('pt-BR')} XP
-                </span>
+              <div className="w-full h-[4px] bg-[#0b0e10] border border-white/10 overflow-hidden mt-1.5">
+                <div
+                  className="h-full bg-gradient-to-r from-[#d4961c] to-[#f8cd4c]"
+                  style={{ width: `${xpPercent}%` }}
+                />
               </div>
             </div>
           </button>
 
-          {/* CP Currency Bar */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-[#151a1e]/90 border border-white/15 h-[44px]">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-b from-[#ffe27a] via-[#e2a322] to-[#98640b] border border-[#fff2b3]/70 flex items-center justify-center text-[10px] font-extrabold text-[#1c1304] shadow-inner shrink-0">
+          <div className="flex items-center gap-1.5 px-2.5 h-[40px] bg-white/[0.04] border border-white/12">
+            <div className="w-5 h-5 rounded-full bg-gradient-to-b from-[#ffe27a] to-[#98640b] flex items-center justify-center text-[9px] font-extrabold text-[#1c1304] shrink-0">
               CP
             </div>
-            <span className="font-military font-bold text-xl tracking-wide text-white tabular-nums">
+            <span className="font-military font-bold text-lg tracking-wide text-white tabular-nums">
               {cpBalance.toLocaleString('pt-BR')}
             </span>
             <button
               onClick={() => setActiveTab('loja')}
               title="Abrir Loja de Suprimentos"
-              className="ml-1 w-6 h-6 flex items-center justify-center text-[#f5c542] hover:bg-[#f5c542]/20 transition-colors cursor-pointer"
+              className="w-5 h-5 flex items-center justify-center text-[#f5c542] hover:bg-[#f5c542]/20 cursor-pointer"
             >
-              <Plus className="w-5 h-5 stroke-[2.8]" />
+              <Plus className="w-4 h-4 stroke-[2.8]" />
             </button>
           </div>
 
-          {/* Notification Bell */}
           <div className="relative">
             <button
               onClick={() => {
@@ -477,19 +465,19 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                 setUnreadCount(0);
               }}
               aria-label="Notificações"
-              className="relative w-[44px] h-[44px] flex items-center justify-center bg-[#151a1e]/90 hover:bg-[#1f262c] border border-white/15 hover:border-[#f5c542]/60 transition-colors cursor-pointer"
+              className="relative w-[40px] h-[40px] flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.1] border border-white/12 cursor-pointer"
             >
-              <Bell className="w-5 h-5 text-white fill-white/90" />
+              <Bell className="w-4 h-4 text-white" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#df3229] text-white text-[11px] font-bold flex items-center justify-center shadow">
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#df3229] text-white text-[10px] font-bold flex items-center justify-center">
                   {unreadCount}
                 </span>
               )}
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-72 bg-[#121619]/96 border border-[#f5c542]/40 shadow-2xl z-40">
-                <div className="px-3.5 py-2 bg-[#181d22] border-b border-white/10 text-xs font-military font-bold tracking-wider uppercase text-[#f5c542]">
+              <div className="absolute right-0 mt-2 w-72 bg-[#0e1215]/96 backdrop-blur-md border border-[#f5c542]/40 shadow-2xl z-40">
+                <div className="px-3.5 py-2 bg-[#161b20] border-b border-white/10 text-xs font-military font-bold tracking-wider uppercase text-[#f5c542]">
                   CENTRAL DE COMUNICAÇÕES
                 </div>
                 <div className="divide-y divide-white/10">
@@ -507,7 +495,6 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             )}
           </div>
 
-          {/* Friends / Squad Icon */}
           <div className="relative">
             <button
               onClick={() => {
@@ -515,14 +502,14 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                 setShowNotifications(false);
               }}
               aria-label="Esquadrão"
-              className="w-[44px] h-[44px] flex items-center justify-center bg-[#151a1e]/90 hover:bg-[#1f262c] border border-white/15 hover:border-[#f5c542]/60 transition-colors cursor-pointer"
+              className="w-[40px] h-[40px] flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.1] border border-white/12 cursor-pointer"
             >
-              <Users className="w-5 h-5 text-white" />
+              <Users className="w-4 h-4 text-white" />
             </button>
 
             {showSquad && (
-              <div className="absolute right-0 mt-2 w-64 bg-[#121619]/96 border border-[#f5c542]/40 shadow-2xl z-40">
-                <div className="px-3.5 py-2 bg-[#181d22] border-b border-white/10 text-xs font-military font-bold tracking-wider uppercase text-[#f5c542]">
+              <div className="absolute right-0 mt-2 w-64 bg-[#0e1215]/96 backdrop-blur-md border border-[#f5c542]/40 shadow-2xl z-40">
+                <div className="px-3.5 py-2 bg-[#161b20] border-b border-white/10 text-xs font-military font-bold tracking-wider uppercase text-[#f5c542]">
                   ESQUADRÃO ALPHA (1 / 4)
                 </div>
                 <div className="p-3 space-y-2.5 text-xs">
@@ -541,64 +528,21 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             )}
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* === MAIN BODY: LEFT NAV + EVENT BANNER & RIGHT TACTICAL PANELS === */}
-      <div className="relative z-10 flex items-stretch justify-between px-4 lg:px-6 pt-2 pb-[44px] h-[calc(100vh-104px)]">
-        {/* LEFT COLUMN: 8 Navigation Buttons + Bottom Special Event Card */}
-        <div className="w-[265px] lg:w-[285px] flex flex-col justify-between shrink-0">
-          {/* 8 Stacked Tactical Nav Buttons */}
-          <nav className="flex flex-col gap-[5px]" aria-label="Menu principal">
-            {navItems.map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`group relative flex items-center justify-between px-3.5 py-[7px] text-left transition-all cursor-pointer border ${
-                    isActive
-                      ? 'bg-gradient-to-r from-[#d49a1a]/75 via-[#7d5812]/55 to-[#16191d]/75 border-[#f7cb4d] shadow-[0_0_20px_rgba(245,197,66,0.28)]'
-                      : 'bg-gradient-to-r from-[#12161a]/90 via-[#1a1f24]/75 to-[#12161a]/45 border-white/15 hover:border-[#f5c542]/60 hover:from-[#1d2227]/95'
-                  }`}
-                >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div
-                      className={`w-8 flex items-center justify-center shrink-0 transition-colors ${
-                        isActive ? 'text-[#ffd85c]' : 'text-[#e3e7ea] group-hover:text-[#ffd85c]'
-                      }`}
-                    >
-                      {item.icon}
-                    </div>
-                    <div className="min-w-0">
-                      <div
-                        className={`font-military font-extrabold text-[19px] leading-[1.05] tracking-[0.04em] uppercase ${
-                          isActive ? 'text-white' : 'text-[#f1f3f5]'
-                        }`}
-                      >
-                        {item.label}
-                      </div>
-                      <div
-                        className={`text-[11px] leading-tight truncate ${
-                          isActive ? 'text-[#f5e7c1]' : 'text-[#b5bec4]'
-                        }`}
-                      >
-                        {item.subtitle}
-                      </div>
-                    </div>
-                  </div>
-                  {isActive && (
-                    <ChevronsRight className="w-6 h-6 text-[#ffd85c] shrink-0 drop-shadow-[0_0_8px_rgba(245,197,66,0.65)]" />
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Bottom-Left Special Event Banner + 5 Carousel Dots */}
-          <div className="mt-2.5">
+      {/* === MAIN LOBBY STAGE: LEFT INTEL CARDS + OPEN CENTER HERO + RIGHT DEPLOYMENT DOCK === */}
+      <main
+        className={`relative z-10 flex-1 flex items-end justify-between px-4 lg:px-7 pb-12 pt-4 transition-opacity duration-200 ${
+          activeTab !== 'jogar' ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}
+      >
+        {/* LEFT COLUMN: Compact Event Carousel + Battle Pass + Daily Challenges */}
+        <div className="w-[270px] lg:w-[295px] flex flex-col gap-2.5 shrink-0">
+          {/* Special Event Banner */}
+          <div>
             <button
               onClick={() => setActiveTab('evento')}
-              className="group relative w-full h-[86px] overflow-hidden border border-white/30 hover:border-[#f5c542] text-left transition-all cursor-pointer shadow-[0_10px_28px_rgba(0,0,0,0.75)] bg-[#14181c]"
+              className="group relative w-full h-[88px] overflow-hidden border border-white/20 hover:border-[#f5c542] text-left cursor-pointer shadow-xl bg-[#101418]"
             >
               <img
                 src={currentEvent.image}
@@ -610,62 +554,68 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                 className="absolute inset-0"
                 style={{
                   background:
-                    'linear-gradient(90deg, rgba(10,13,16,0.94) 0%, rgba(10,13,16,0.72) 55%, rgba(10,13,16,0.12) 100%)',
+                    'linear-gradient(90deg, rgba(9,12,15,0.95) 0%, rgba(9,12,15,0.7) 58%, rgba(9,12,15,0.15) 100%)',
                 }}
               />
               <div className="absolute inset-0 p-3 flex flex-col justify-between">
                 <div>
-                  <div className="font-military font-bold text-[11px] tracking-[0.12em] text-[#f5c542] uppercase leading-none">
+                  <div className="font-mono-hud text-[9px] tracking-[0.18em] text-[#f5c542] uppercase">
                     {currentEvent.kicker}
                   </div>
-                  <div className="font-military font-extrabold text-[23px] tracking-[0.03em] text-white uppercase leading-tight mt-0.5">
+                  <div className="font-military font-extrabold text-[20px] tracking-[0.04em] text-white uppercase leading-tight mt-0.5">
                     {currentEvent.title}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-[11px] font-medium text-[#f5c542]">
-                  <span>Termina em: {currentEvent.timer}</span>
+                <div className="flex items-center gap-1 text-[10px] font-mono-hud text-[#f5c542]">
+                  <span>TERMINA EM {currentEvent.timer}</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </div>
               </div>
             </button>
-
-            {/* 5 Interactive Carousel Dots */}
-            <div className="flex items-center justify-center gap-2 mt-2">
+            <div className="flex items-center gap-1.5 mt-1.5 pl-0.5">
               {EVENTS_CAROUSEL.map((ev, idx) => (
                 <button
                   key={ev.id}
                   onClick={() => setEventIdx(idx)}
                   aria-label={ev.title}
-                  className={`h-2 rounded-full transition-all cursor-pointer ${
-                    idx === eventIdx
-                      ? 'w-2.5 bg-[#f5c542] shadow-[0_0_8px_rgba(245,197,66,0.8)]'
-                      : 'w-2 bg-white/35 hover:bg-white/65'
+                  className={`h-1.5 transition-all cursor-pointer ${
+                    idx === eventIdx ? 'w-5 bg-[#f5c542]' : 'w-2 bg-white/30 hover:bg-white/60'
                   }`}
                 />
               ))}
             </div>
           </div>
-        </div>
 
-        {/* RIGHT COLUMN: Daily Challenges + Battle Pass + Selected Mode & ENTRAR CTA */}
-        <div
-          className={`w-[275px] lg:w-[296px] flex flex-col justify-end gap-2.5 shrink-0 transition-opacity duration-200 ${
-            activeTab !== 'jogar' ? 'opacity-0 pointer-events-none' : 'opacity-100'
-          }`}
-        >
-          {/* 1. DESAFIOS DIÁRIOS */}
-          <div className="relative bg-[#13171b]/88 border border-white/18 shadow-[0_12px_32px_rgba(0,0,0,0.65)]">
-            <div className="flex items-center justify-between px-3.5 py-2 bg-[#191f24]/90 border-b border-white/10">
-              <span className="font-military font-bold text-[16px] tracking-[0.06em] uppercase text-white">
-                DESAFIOS DIÁRIOS
-              </span>
-              <div className="flex items-center gap-1 text-[11px] font-mono-hud text-[#f5c542]">
-                <Clock className="w-3.5 h-3.5" />
-                <span>12h 34min</span>
+          {/* Battle Pass Compact Card */}
+          <button
+            onClick={() => setActiveTab('passe')}
+            className="group relative flex items-center justify-between px-3.5 py-2.5 bg-[#0d1115]/82 backdrop-blur-md border border-white/15 hover:border-[#f5c542]/70 text-left cursor-pointer shadow-xl"
+          >
+            <div>
+              <div className="font-military font-extrabold text-[17px] tracking-[0.06em] uppercase text-white leading-none">
+                PASSE DE BATALHA
+              </div>
+              <div className="text-[11px] font-mono-hud text-[#f5c542] mt-1">
+                NÍVEL 50 · RECOMPENSAS LIBERADAS
               </div>
             </div>
+            <div className="flex items-center gap-1 shrink-0 scale-90">
+              <BattlePassCrest />
+            </div>
+          </button>
 
-            <div className="p-3 pr-8 space-y-2.5">
+          {/* Daily Challenges Glassmorphic Panel */}
+          <div className="relative bg-[#0d1115]/82 backdrop-blur-md border border-white/15 shadow-xl">
+            <div className="flex items-center justify-between px-3.5 py-2 bg-white/[0.03] border-b border-white/10">
+              <span className="font-military font-bold text-[14px] tracking-[0.08em] uppercase text-white">
+                DESAFIOS DIÁRIOS
+              </span>
+              <div className="flex items-center gap-1 text-[10px] font-mono-hud text-[#f5c542]">
+                <Clock className="w-3 h-3" />
+                <span>12h 34m</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-2">
               {dailyChallenges.map((c) => {
                 const complete = c.current >= c.target;
                 const pct = Math.min(100, Math.round((c.current / c.target) * 100));
@@ -675,30 +625,18 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                     onClick={() => setActiveTab('desafios')}
                     className="w-full text-left group cursor-pointer"
                   >
-                    <div className="flex items-center justify-between gap-2 text-[12px]">
+                    <div className="flex items-center justify-between gap-2 text-[11px]">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <Check
-                          className={`w-3.5 h-3.5 shrink-0 ${
-                            complete ? 'text-[#62c965]' : 'text-[#5cb85f]/80'
-                          }`}
-                        />
-                        <span className="text-[#eef2f5] group-hover:text-[#f5c542] transition-colors truncate">
-                          {c.label}
-                        </span>
+                        <Check className={`w-3.5 h-3.5 shrink-0 ${complete ? 'text-[#62c965]' : 'text-[#78848c]'}`} />
+                        <span className="text-[#e6edf2] group-hover:text-[#f5c542] truncate">{c.label}</span>
                       </div>
-                      <span className="text-[11px] font-mono-hud text-[#d6dde2] shrink-0">
-                        {c.current} / {c.target}
+                      <span className="text-[10px] font-mono-hud text-[#b8c2c8] shrink-0">
+                        {c.current}/{c.target}
                       </span>
                     </div>
-                    <div className="mt-1 ml-5 h-[5px] bg-[#2a3137] overflow-hidden">
+                    <div className="mt-1 ml-5 h-[4px] bg-white/10 overflow-hidden">
                       <div
-                        className={`h-full transition-all ${
-                          complete
-                            ? 'bg-[#64c967]'
-                            : pct > 0
-                            ? 'bg-gradient-to-r from-[#d4961c] to-[#f7ca4a]'
-                            : 'bg-transparent'
-                        }`}
+                        className={`h-full ${complete ? 'bg-[#64c967]' : 'bg-[#f5c542]'}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -706,57 +644,46 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                 );
               })}
             </div>
-
-            {/* Right-edge gold chevron tab */}
-            <button
-              onClick={() => setActiveTab('desafios')}
-              title="Ver e resgatar Desafios Diários"
-              className="absolute right-0 top-[38px] bottom-0 w-7 flex items-center justify-center bg-[#191f24]/70 hover:bg-[#f5c542]/20 border-l border-white/10 text-[#f5c542] cursor-pointer transition-colors"
-            >
-              <ChevronsRight className="w-4 h-4" />
-            </button>
           </div>
+        </div>
 
-          {/* 2. PASSE DE BATALHA */}
+        {/* CENTER-BOTTOM: Active Loadout Strip (click to customize Arsenal) */}
+        <div className="hidden lg:flex flex-col items-center gap-2 mb-1">
           <button
-            onClick={() => setActiveTab('passe')}
-            className="group relative flex items-center justify-between px-3.5 py-2.5 bg-gradient-to-r from-[#14181c]/92 via-[#23211a]/88 to-[#2c2516]/90 border border-white/20 hover:border-[#f5c542] text-left transition-all cursor-pointer overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.65)]"
+            onClick={() => setActiveTab('arsenal')}
+            className="flex items-center gap-4 px-5 py-2 bg-[#0b0e12]/78 backdrop-blur-md border border-white/15 hover:border-[#f5c542]/70 cursor-pointer shadow-2xl"
           >
-            <div className="relative z-10">
-              <div className="font-military font-extrabold text-[19px] tracking-[0.05em] uppercase text-white leading-none">
-                PASSE DE BATALHA
+            <AssaultRifleIcon className="w-6 h-5 text-[#f5c542]" />
+            <div className="text-left">
+              <div className="text-[9px] font-mono-hud tracking-[0.2em] text-[#9aa4ac] uppercase">
+                ARMAMENTO EQUIPADO
               </div>
-              <div className="font-military font-bold text-[15px] text-[#f5c542] leading-tight mt-0.5">
-                Nível 50
+              <div className="font-military font-bold text-sm tracking-wider uppercase text-white">
+                {WEAPONS[deployConfig.primaryWeapon]?.name ?? 'M4A1 SOPMOD'}{' '}
+                <span className="text-[#8e98a0]">·</span>{' '}
+                {WEAPONS[deployConfig.secondaryWeapon]?.name ?? 'M24'}{' '}
+                <span className="text-[#8e98a0]">·</span>{' '}
+                <span className="text-[#f5c542]">EDITAR ARSENAL</span>
               </div>
-              <div className="text-[11px] text-[#e5cfa0] mt-1">
-                Recompensas exclusivas!
-              </div>
-            </div>
-            <div className="relative z-10 flex items-center gap-0.5 shrink-0">
-              <BattlePassCrest />
-              <ChevronRight className="w-4 h-4 text-[#f5c542] group-hover:translate-x-0.5 transition-transform" />
             </div>
           </button>
+        </div>
 
-          {/* 3. MODO SELECIONADO + LARGE GOLDEN ENTRAR CTA */}
-          <div className="border border-white/25 bg-[#12161a]/92 shadow-[0_16px_40px_rgba(0,0,0,0.8)] overflow-hidden">
-            {/* Mode Selector Preview */}
+        {/* RIGHT COLUMN: Mode Preview + Quick Selector + Primary DEPLOY CTA */}
+        <div className="w-[290px] lg:w-[320px] flex flex-col gap-2.5 shrink-0">
+          <div className="bg-[#0d1115]/88 backdrop-blur-md border border-white/20 shadow-[0_18px_45px_rgba(0,0,0,0.85)] overflow-hidden">
             <button
               onClick={handleCycleMode}
               title="Clique para alternar o modo de operação"
               className="group relative w-full text-left block cursor-pointer"
             >
-              <div className="flex items-center justify-between px-3 py-1.5 bg-[#191f25]/95 border-b border-white/10">
-                <span className="font-military font-bold text-[13px] tracking-[0.08em] uppercase text-[#e6ebef]">
-                  MODO SELECIONADO
+              <div className="flex items-center justify-between px-3.5 py-2 bg-white/[0.04] border-b border-white/10">
+                <span className="font-military font-bold text-[12px] tracking-[0.12em] uppercase text-[#d8e0e6]">
+                  MODO DE OPERAÇÃO
                 </span>
-                <span className="text-[10px] font-mono-hud text-[#f5c542] opacity-85 group-hover:opacity-100">
-                  TROCAR MODO ▸
-                </span>
+                <span className="text-[10px] font-mono-hud text-[#f5c542]">ALTERNAR ▸</span>
               </div>
-
-              <div className="relative h-[116px] overflow-hidden bg-[#1a2024]">
+              <div className="relative h-[126px] overflow-hidden bg-[#151a1e]">
                 <img
                   src={currentMode.image}
                   alt={currentMode.title}
@@ -767,30 +694,26 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                   className="absolute inset-0"
                   style={{
                     background:
-                      'linear-gradient(180deg, rgba(10,13,16,0.12) 0%, rgba(10,13,16,0.35) 50%, rgba(10,13,16,0.92) 100%)',
+                      'linear-gradient(180deg, rgba(8,10,13,0.12) 0%, rgba(8,10,13,0.45) 55%, rgba(8,10,13,0.95) 100%)',
                   }}
                 />
-                <div className="absolute bottom-2.5 left-3 right-3 flex items-end justify-between gap-2">
+                <div className="absolute bottom-2.5 left-3.5 right-3.5 flex items-end justify-between">
                   <div>
-                    <div className="font-military font-extrabold text-[22px] tracking-[0.04em] uppercase text-white leading-none">
+                    <div className="font-military font-extrabold text-[23px] tracking-[0.04em] uppercase text-white leading-none">
                       {currentMode.title}
                     </div>
-                    <div className="text-[11px] text-[#d5dce0] mt-0.5">
-                      {currentMode.subtitle}
-                    </div>
+                    <div className="text-[11px] text-[#cfd7dd] mt-0.5">{currentMode.subtitle}</div>
                   </div>
-                  <Users className="w-5 h-5 text-white/90 shrink-0 mb-0.5" />
                 </div>
               </div>
             </button>
 
-            {/* Quick 1-Click Mode Tabs (including TREINAMENTO firing range) */}
-            <div className="grid grid-cols-4 border-t border-white/15 bg-[#101418]">
+            <div className="grid grid-cols-4 border-t border-white/12 bg-[#0b0e12]">
               {[
                 { id: 'open_world' as DeploymentMode, label: 'ABERTO' },
                 { id: 'desert_op' as DeploymentMode, label: 'DESERTO' },
                 { id: 'night_raid' as DeploymentMode, label: 'NOITE' },
-                { id: 'training' as DeploymentMode, label: 'TREINAMENTO' },
+                { id: 'training' as DeploymentMode, label: 'TREINO' },
               ].map((tab) => {
                 const active = deployConfig.mode === tab.id;
                 return (
@@ -798,10 +721,10 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                     key={tab.id}
                     type="button"
                     onClick={() => handleChangeDeployConfig({ mode: tab.id })}
-                    className={`py-1.5 px-1 text-[9.5px] font-military font-bold tracking-[0.06em] uppercase transition-colors cursor-pointer border-r last:border-r-0 border-white/10 ${
+                    className={`py-2 px-1 text-[10px] font-military font-bold tracking-[0.08em] uppercase transition-colors cursor-pointer border-r last:border-r-0 border-white/10 ${
                       active
-                        ? 'bg-[#f2b91d]/22 text-[#ffd85a] shadow-[inset_0_-2px_0_#f2b91d]'
-                        : 'text-[#aeb8c0] hover:bg-white/6 hover:text-white'
+                        ? 'bg-[#f2b91d]/20 text-[#ffd85a] shadow-[inset_0_-2px_0_#f2b91d]'
+                        : 'text-[#9aa4ac] hover:bg-white/[0.05] hover:text-white'
                     }`}
                   >
                     {tab.label}
@@ -810,30 +733,28 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               })}
             </div>
 
-            {/* Optional Continue Saved Operation strip if IndexedDB save exists */}
             {hasSavedGame && (
               <button
                 onClick={onContinue}
-                className="w-full py-1.5 px-3 bg-[#1a2228] hover:bg-[#232e36] border-t border-white/15 flex items-center justify-center gap-2 text-[11px] font-military font-bold tracking-[0.1em] uppercase text-[#f5c542] cursor-pointer transition-colors"
+                className="w-full py-2 px-3 bg-[#161c22] hover:bg-[#1f2830] border-t border-white/12 flex items-center justify-center gap-2 text-[11px] font-military font-bold tracking-[0.12em] uppercase text-[#f5c542] cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>CONTINUAR OPERAÇÃO SALVA</span>
               </button>
             )}
 
-            {/* Primary Golden ENTRAR CTA */}
             <button
               onClick={() => handleDeployNow()}
-              className="group relative w-full h-[52px] bg-gradient-to-b from-[#ffe055] via-[#f2b91d] to-[#d9920d] hover:brightness-110 active:brightness-95 text-[#111315] flex items-center justify-center cursor-pointer transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
+              className="group relative w-full h-[56px] bg-gradient-to-b from-[#ffe055] via-[#f2b91d] to-[#d48e0c] hover:brightness-110 text-[#0f1214] flex items-center justify-center cursor-pointer shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
             >
-              <span className="font-military font-extrabold text-[27px] tracking-[0.08em] uppercase">
+              <span className="font-military font-extrabold text-[26px] tracking-[0.1em] uppercase">
                 ENTRAR
               </span>
-              <ChevronRight className="absolute right-4 w-7 h-7 stroke-[3] text-[#111315] group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="absolute right-4 w-7 h-7 stroke-[3] text-[#0f1214] group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* === INTERACTIVE SUB-PANEL DRAWERS FOR ALL TABS === */}
       <MenuDrawers
@@ -867,11 +788,11 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       />
 
       {/* === BOTTOM SLIM STATUS FOOTER BAR === */}
-      <div className="fixed bottom-0 inset-x-0 z-20 h-[34px] px-4 lg:px-6 bg-[#0b0e11]/88 border-t border-white/10 flex items-center justify-between text-[11px] text-[#c7cfd4]">
+      <footer className="fixed bottom-0 inset-x-0 z-20 h-[34px] px-4 lg:px-7 bg-[#090c0f]/88 backdrop-blur-md border-t border-white/10 flex items-center justify-between text-[11px] text-[#c7cfd4]">
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleMute}
-            className="flex items-center gap-1.5 text-[#b6bfc6] hover:text-[#f5c542] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-[#b6bfc6] hover:text-[#f5c542] cursor-pointer"
           >
             {muted ? <VolumeX className="w-3.5 h-3.5 text-[#e84b3c]" /> : <Volume2 className="w-3.5 h-3.5 text-[#f5c542]" />}
             <span className="font-mono-hud text-[10px] uppercase">{muted ? 'Áudio Mudo' : 'Áudio Ativo'}</span>
@@ -887,7 +808,6 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             <Globe className="w-3.5 h-3.5 text-[#dce3e8]" />
             <span className="text-[#e3e8ec]">Servidor: América do Sul</span>
           </div>
-          {/* 4-bar green signal icon */}
           <div className="flex items-end gap-[2px] h-3" aria-label="Sinal excelente">
             <span className="w-[3px] h-[5px] bg-[#5ed162]" />
             <span className="w-[3px] h-[8px] bg-[#5ed162]" />
@@ -896,7 +816,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           </div>
           <span className="font-mono-hud text-[#99a3ab] ml-2">v1.0.0</span>
         </div>
-      </div>
+      </footer>
     </div>
   );
 };

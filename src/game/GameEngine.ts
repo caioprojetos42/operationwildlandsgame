@@ -524,6 +524,7 @@ export class GameEngine {
 
   public setPhase(next: GamePhase) {
     this.phase = next;
+    this.audio.setLobbyMusicActive(next === 'title');
     if (next === 'playing') {
       this.audio.unlock();
       this.requestPointerLock();

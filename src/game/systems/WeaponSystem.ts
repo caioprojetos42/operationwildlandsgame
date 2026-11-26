@@ -75,6 +75,32 @@ const _camRight = new THREE.Vector3();
 const _camUp = new THREE.Vector3();
 const _camFwd = new THREE.Vector3();
 
+const WEAPON_GLB_URLS: Record<WeaponId, string> = {
+  ar15: '/models/weapon_m4a1.glb',
+  m4a1: '/models/weapon_m4a1.glb',
+  ak74: '/models/weapon_ak74.glb',
+  fal: '/models/weapon_ak74.glb',
+  g36: '/models/weapon_vsk.glb',
+  scarh: '/models/weapon_vsk.glb',
+  mp5: '/models/weapon_mp5.glb',
+  mp7: '/models/weapon_smg_kdw.glb',
+  ump45: '/models/weapon_smg_kdw.glb',
+  m870: '/models/weapon_saiga12.glb',
+  saiga12: '/models/weapon_saiga12.glb',
+  m700: '/models/weapon_50cal.glb',
+  m24: '/models/weapon_sniper.glb',
+  glock17: '/models/weapon_pistol.glb',
+  m1911: '/models/weapon_pistol.glb',
+};
+
+interface WeaponGlbAnimRig {
+  mixer: THREE.AnimationMixer;
+  idleAction: THREE.AnimationAction | null;
+  fireAction: THREE.AnimationAction | null;
+  reloadAction: THREE.AnimationAction | null;
+  drawAction: THREE.AnimationAction | null;
+}
+
 export class WeaponSystem {
   public weaponRoot = new THREE.Group();
   public currentWeaponId: WeaponId | null = null;
@@ -88,6 +114,7 @@ export class WeaponSystem {
   public dynamicSpread = 0;
 
   private builtModels = new Map<WeaponId, BuiltWeaponModel>();
+  private weaponAnimRigs = new Map<WeaponId, WeaponGlbAnimRig>();
   private activeModel: BuiltWeaponModel | null = null;
   private muzzleLight: THREE.PointLight;
   private muzzleFlashTimer = 0;
@@ -183,18 +210,79 @@ export class WeaponSystem {
     let built = this.builtModels.get(state.weaponId);
     if (!built) {
       built = buildWeaponModel(state.weaponId, this.mats);
-      // Phase 4: Non-blocking external .glb weapon hook if configured in manifest.json
-      const spec = WEAPONS[state.weaponId];
-      const assetKey =
-        spec.category === 'pistol'
-          ? 'weapon_pistol'
-          : spec.category === 'smg'
-          ? 'weapon_smg'
-          : spec.category === 'sniper'
-          ? 'weapon_sniper'
-          : 'weapon_rifle';
-      this.world.assetManager.attachExternalOverrideIfAvailable(assetKey, built.group);
+      const glbUrl = WEAPON_GLB_URLS[state.weaponId];
+      if (glbUrl) {
+        const wId = state.weaponId;
+        const targetBuilt = built;
+        void this.world.assetManager.loadByUrl(glbUrl).then((res) => {
+          if (!res) return;
+          const glbGroup = res.group;
+          glbGroup.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(glbGroup);
+          const size = new THREE.Vector3();
+          const center = new THREE.Vector3();
+          box.getSize(size);
+          box.getCenter(center);
+          const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+          const targetLen = WEAPONS[wId].category === 'pistol' ? 0.42 : 0.68;
+          const normScale = targetLen / maxDim;
+          glbGroup.scale.setScalar(normScale);
+          // Center weapon+arms nicely in first-person viewmodel space
+          glbGroup.position.set(-center.x * normScale, -center.y * normScale - 0.04, -center.z * normScale - 0.08);
+          // Rotate if model's long axis is +X instead of Z
+          if (size.x > size.z * 1.35) {
+            glbGroup.rotation.y = Math.PI * 0.5;
+          }
+
+          // Hide procedural meshes while preserving muzzlePoint, ejectionPort & muzzleFlash
+          const keepNodes = new Set<THREE.Object3D>([
+            targetBuilt.muzzlePoint,
+            targetBuilt.ejectionPort,
+            targetBuilt.muzzleFlash,
+          ]);
+          targetBuilt.group.traverse((obj) => {
+            if (obj === targetBuilt.group || keepNodes.has(obj)) return;
+            if ((obj as THREE.Mesh).isMesh) {
+              obj.visible = false;
+            }
+          });
+          targetBuilt.group.add(glbGroup);
+
+          if (res.animations.length > 0) {
+            const mixer = new THREE.AnimationMixer(glbGroup);
+            const findClip = (patterns: RegExp[]) =>
+              res.animations.find((c) => patterns.some((p) => p.test(c.name))) ?? null;
+            const idleClip = findClip([/idle/i, /dpose/i]) ?? res.animations[0];
+            const fireClip = findClip([/fire/i, /shot/i, /shoot/i]);
+            const reloadClip = findClip([/reload/i]);
+            const drawClip = findClip([/draw/i, /equip/i]);
+
+            const idleAction = idleClip ? mixer.clipAction(idleClip) : null;
+            if (idleAction) idleAction.play();
+            const fireAction = fireClip ? mixer.clipAction(fireClip) : null;
+            if (fireAction) {
+              fireAction.setLoop(THREE.LoopOnce, 1);
+              fireAction.clampWhenFinished = false;
+            }
+            const reloadAction = reloadClip ? mixer.clipAction(reloadClip) : null;
+            if (reloadAction) {
+              reloadAction.setLoop(THREE.LoopOnce, 1);
+              reloadAction.clampWhenFinished = false;
+            }
+            const drawAction = drawClip ? mixer.clipAction(drawClip) : null;
+            if (drawAction) {
+              drawAction.setLoop(THREE.LoopOnce, 1);
+              drawAction.clampWhenFinished = false;
+            }
+            this.weaponAnimRigs.set(wId, { mixer, idleAction, fireAction, reloadAction, drawAction });
+          }
+        });
+      }
       this.builtModels.set(state.weaponId, built);
+    }
+    const animRig = this.weaponAnimRigs.get(state.weaponId);
+    if (animRig?.drawAction) {
+      animRig.drawAction.reset().play();
     }
     built.suppressorMesh.visible = state.suppressed;
     built.magMesh.position.copy(built.magRestPos);
@@ -222,6 +310,10 @@ export class WeaponSystem {
     this.reloadTimer = spec.reloadTime;
     this.burstQueue = 0;
     this.audio.playReload('start');
+    const animRig = this.weaponAnimRigs.get(state.weaponId);
+    if (animRig?.reloadAction) {
+      animRig.reloadAction.reset().play();
+    }
   }
 
   public triggerFire(
@@ -289,6 +381,10 @@ export class WeaponSystem {
     // Muzzle flash, light pulse, reciprocating bolt & brass shell ejection
     if (this.activeModel) {
       this.boltKick = 1.0;
+      const animRig = this.weaponAnimRigs.get(state.weaponId);
+      if (animRig?.fireAction) {
+        animRig.fireAction.reset().play();
+      }
       if (!state.suppressed) {
         this.activeModel.muzzleFlash.visible = true;
         this.activeModel.muzzleFlash.rotation.z = Math.random() * Math.PI * 2;
@@ -744,6 +840,10 @@ export class WeaponSystem {
     }
 
     // Smooth ADS zoom, FOV, weapon viewmodel position, sway, bob & recoil recovery
+    if (activeState) {
+      const animRig = this.weaponAnimRigs.get(activeState.weaponId);
+      if (animRig) animRig.mixer.update(dt);
+    }
     const spec = activeState ? WEAPONS[activeState.weaponId] : null;
     const targetAds = this.aiming && !this.reloading && !sprinting && spec ? 1 : 0;
     this.adsBlend = THREE.MathUtils.damp(this.adsBlend, targetAds, 14, dt);

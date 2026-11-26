@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 
 export type AssetCategory =
   | 'vehicle_apc'
@@ -71,6 +72,8 @@ export class ModelAssetManager {
   private loader = new GLTFLoader();
   private manifest: ModelManifest | null = null;
   private cache = new Map<AssetCategory, THREE.Group>();
+  private urlCache = new Map<string, { group: THREE.Group; animations: THREE.AnimationClip[] }>();
+  private urlLoading = new Map<string, Promise<{ group: THREE.Group; animations: THREE.AnimationClip[] } | null>>();
   private instancedCache = new Map<AssetCategory, InstancedPrototype>();
   private loading = new Map<AssetCategory, Promise<THREE.Group | null>>();
   private initialized = false;
@@ -133,7 +136,7 @@ export class ModelAssetManager {
     if (!entry?.url) return null;
 
     const cached = this.cache.get(key);
-    if (cached) return cached.clone(true);
+    if (cached) return cloneSkinned(cached) as THREE.Group;
 
     let promise = this.loading.get(key);
     if (!promise) {
@@ -153,6 +156,7 @@ export class ModelAssetManager {
                 const m = obj as THREE.Mesh;
                 m.castShadow = true;
                 m.receiveShadow = true;
+                m.frustumCulled = false;
               }
             });
             root.add(model);
@@ -168,7 +172,78 @@ export class ModelAssetManager {
     }
 
     const loaded = await promise;
-    return loaded ? loaded.clone(true) : null;
+    return loaded ? (cloneSkinned(loaded) as THREE.Group) : null;
+  }
+
+  /**
+   * Loads and caches a GLB by direct URL (preserving embedded AnimationClips & SkinnedMesh rigs).
+   */
+  public async loadByUrl(
+    url: string
+  ): Promise<{ group: THREE.Group; animations: THREE.AnimationClip[] } | null> {
+    const cached = this.urlCache.get(url);
+    if (cached) {
+      return {
+        group: cloneSkinned(cached.group) as THREE.Group,
+        animations: cached.animations,
+      };
+    }
+
+    let promise = this.urlLoading.get(url);
+    if (!promise) {
+      promise = new Promise<{ group: THREE.Group; animations: THREE.AnimationClip[] } | null>((resolve) => {
+        this.loader.load(
+          url,
+          (gltf) => {
+            const model = gltf.scene;
+            model.traverse((obj) => {
+              if ((obj as THREE.Mesh).isMesh) {
+                const m = obj as THREE.Mesh;
+                m.castShadow = true;
+                m.receiveShadow = true;
+                m.frustumCulled = false;
+              }
+            });
+            model.updateMatrixWorld(true);
+            const entry = { group: model, animations: gltf.animations ?? [] };
+            this.urlCache.set(url, entry);
+            resolve(entry);
+          },
+          undefined,
+          () => resolve(null)
+        );
+      });
+      this.urlLoading.set(url, promise);
+    }
+
+    const loaded = await promise;
+    if (!loaded) return null;
+    return {
+      group: cloneSkinned(loaded.group) as THREE.Group,
+      animations: loaded.animations,
+    };
+  }
+
+  /**
+   * Loads a soldier GLB from manifest.json and normalizes its height to `targetHeight` meters
+   * with feet grounded at y = 0.
+   */
+  public async loadNormalizedSoldier(key: AssetCategory, targetHeight = 1.78): Promise<THREE.Group | null> {
+    const clone = await this.loadClone(key);
+    if (!clone) return null;
+
+    clone.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(clone);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    if (size.y > 0.01) {
+      const normScale = targetHeight / size.y;
+      clone.scale.multiplyScalar(normScale);
+      clone.updateMatrixWorld(true);
+      const scaledBox = new THREE.Box3().setFromObject(clone);
+      clone.position.y -= scaledBox.min.y;
+    }
+    return clone;
   }
 
   /**

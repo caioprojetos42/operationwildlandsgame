@@ -157,7 +157,7 @@
     "soldier_trooper": {
       "category": "characters",
       "label": "Soldado Operador Tatico",
-      "url": null,
+      "url": "/models/soldier_modern.glb",
       "scale": 1.0,
       "yOffset": 0.0,
       "rotY": 0.0
@@ -165,7 +165,7 @@
     "soldier_heavy": {
       "category": "characters",
       "label": "Soldado Blindado Pesado",
-      "url": null,
+      "url": "/models/soldier_heavy.glb",
       "scale": 1.0,
       "yOffset": 0.0,
       "rotY": 0.0
@@ -173,7 +173,7 @@
     "soldier_sniper": {
       "category": "characters",
       "label": "Atirador de Elite / Recon",
-      "url": null,
+      "url": "/models/soldier_trooper.glb",
       "scale": 1.0,
       "yOffset": 0.0,
       "rotY": 0.0
@@ -181,7 +181,7 @@
     "weapon_rifle": {
       "category": "weapons",
       "label": "Fuzil de Assalto Tatico",
-      "url": null,
+      "url": "/models/weapon_m4a1.glb",
       "scale": 1.0,
       "yOffset": 0.0,
       "rotY": 0.0
@@ -189,7 +189,7 @@
     "weapon_smg": {
       "category": "weapons",
       "label": "Submetralhadora Tatica",
-      "url": null,
+      "url": "/models/weapon_mp5.glb",
       "scale": 1.0,
       "yOffset": 0.0,
       "rotY": 0.0
@@ -197,7 +197,7 @@
     "weapon_sniper": {
       "category": "weapons",
       "label": "Fuzil de Precisao",
-      "url": null,
+      "url": "/models/weapon_50cal.glb",
       "scale": 1.0,
       "yOffset": 0.0,
       "rotY": 0.0
@@ -205,7 +205,7 @@
     "weapon_pistol": {
       "category": "weapons",
       "label": "Pistola Tatica",
-      "url": null,
+      "url": "/models/weapon_pistol.glb",
       "scale": 1.0,
       "yOffset": 0.0,
       "rotY": 0.0

@@ -149,7 +149,28 @@ export class EnemyAI {
         : enemyClass === 'sniper'
         ? 'soldier_sniper'
         : 'soldier_trooper';
-    this.world.assetManager.attachExternalOverrideIfAvailable(assetKey, model.group);
+    const targetHeight = enemyClass === 'heavy' ? 1.94 : 1.78;
+    const invisibleHitMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    });
+    void this.world.assetManager.loadNormalizedSoldier(assetKey, targetHeight).then((glbSoldier) => {
+      if (!glbSoldier) return;
+      const hitSet = new Set<THREE.Object3D>(model.hitMeshes);
+      model.group.traverse((obj) => {
+        if (obj === model.group || obj === model.muzzleFlash) return;
+        if (hitSet.has(obj)) {
+          (obj as THREE.Mesh).material = invisibleHitMat;
+          (obj as THREE.Mesh).castShadow = false;
+          return;
+        }
+        if ((obj as THREE.Mesh).isMesh) {
+          obj.visible = false;
+        }
+      });
+      model.group.add(glbSoldier);
+    });
 
     const stats: Record<
       EnemyClass,
