@@ -175,9 +175,12 @@ const CATEGORY_LABELS: Record<WeaponCategory, string> = {
   assault: 'RIFLES DE ASSALTO',
   smg: 'SUBMETRALHADORAS',
   battle_rifle: 'RIFLES DE BATALHA',
+  lmg: 'METRALHADORAS LMG',
   sniper: 'PRECISÃO / SNIPER',
   shotgun: 'ESCOPETAS',
   pistol: 'PISTOLAS',
+  launcher: 'LANÇADORES',
+  melee: 'FACAS / CORPO A CORPO',
 };
 
 const PRESETS: { id: GraphicsPreset; label: string }[] = [

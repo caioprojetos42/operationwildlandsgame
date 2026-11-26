@@ -10,21 +10,36 @@ export type GamePhase =
 export type WeaponId =
   | 'ak74'
   | 'm4a1'
+  | 'm4a4'
+  | 'aug'
   | 'mp5'
   | 'mp7'
+  | 'smg45'
+  | 'p9'
   | 'm24'
   | 'm700'
   | 'scarh'
+  | 'fal'
+  | 'lmg'
   | 'saiga12'
-  | 'glock17';
+  | 'saiga9'
+  | 'glock17'
+  | 'pistol43'
+  | 'magnum'
+  | 'grenadelauncher'
+  | 'rpg7'
+  | 'butterfly';
 
 export type WeaponCategory =
   | 'assault'
   | 'smg'
   | 'sniper'
   | 'battle_rifle'
+  | 'lmg'
   | 'shotgun'
-  | 'pistol';
+  | 'pistol'
+  | 'launcher'
+  | 'melee';
 
 export type AmmoCaliber =
   | '5.56x45'

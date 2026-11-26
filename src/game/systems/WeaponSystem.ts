@@ -77,14 +77,26 @@ const _camFwd = new THREE.Vector3();
 
 const WEAPON_GLB_URLS: Record<WeaponId, string> = {
   m4a1: '/models/weapon_m4a1.glb',
+  m4a4: '/models/animated_fps_m4a4.glb',
+  aug: '/models/steyr_aug_a1_assault_rifle_animated.glb',
   ak74: '/models/weapon_ak74.glb',
-  scarh: '/models/weapon_vsk.glb',
+  scarh: '/models/scar_h_first_person_fps_animated.glb',
+  fal: '/models/battle_rifle_animated.glb',
+  lmg: '/models/lmg_animated.glb',
   mp5: '/models/weapon_mp5.glb',
   mp7: '/models/weapon_smg_kdw.glb',
+  smg45: '/models/fps_animated_smg.glb',
+  p9: '/models/p9_manny_fps_animations.glb',
   saiga12: '/models/weapon_saiga12.glb',
+  saiga9: '/models/saiga_9mm_fps_animation.glb',
   m700: '/models/weapon_50cal.glb',
   m24: '/models/weapon_sniper.glb',
   glock17: '/models/weapon_pistol.glb',
+  pistol43: '/models/pistol_43_tactical_fps_animations.glb',
+  magnum: '/models/animated_magnum.glb',
+  grenadelauncher: '/models/grenadelauncher_animated.glb',
+  rpg7: '/models/rpg_7_animations.glb',
+  butterfly: '/models/fps_butterfly_knife.glb',
 };
 
 interface WeaponGlbAnimRig {
@@ -254,8 +266,8 @@ export class WeaponSystem {
             const mats = Array.isArray(m.material) ? m.material : [m.material];
             const matNames = mats.map((mt) => mt?.name || '').join(' ');
             if (
-              /arm|hand|glove|sleeve|male_04/i.test(m.name) ||
-              /arms|hand_d|glove_d|male_04/i.test(matNames)
+              /arm|hand|glove|sleeve|male_04|dmc5_soldier|sk_mannequin|bf3_tex|ch21_|ch22_|shape_pose|viewer_cube|crosshair/i.test(m.name) ||
+              /arms|hand_d|glove_d|male_04|dmc5_soldier|hardknuckle|sleeve_st6|sk_mannequin|hands_mat/i.test(matNames)
             ) {
               m.visible = false;
             }
@@ -277,7 +289,17 @@ export class WeaponSystem {
           const maxDim = Math.max(size.x, size.y, size.z, 0.001);
           const cat = WEAPONS[wId].category;
           const targetLen =
-            cat === 'pistol' ? 0.25 : cat === 'smg' ? 0.44 : cat === 'sniper' ? 0.84 : 0.66;
+            cat === 'pistol'
+              ? 0.25
+              : cat === 'melee'
+              ? 0.28
+              : cat === 'smg'
+              ? 0.44
+              : cat === 'sniper'
+              ? 0.84
+              : cat === 'launcher' || cat === 'lmg'
+              ? 0.78
+              : 0.66;
           const normScale = targetLen / maxDim;
           glbGroup.scale.setScalar(normScale);
           glbGroup.updateMatrixWorld(true);

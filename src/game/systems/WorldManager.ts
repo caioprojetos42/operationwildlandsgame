@@ -98,6 +98,14 @@ export class WorldManager {
   public loot: LootSystem;
   public assetManager: ModelAssetManager;
   public industrialMinimapData: MinimapMapData | null = null;
+  public ancientRomeMinimapData: MinimapMapData | null = null;
+  public activeMapMode: 'industrial' | 'ancient_rome' = 'industrial';
+  private industrialMapGroup: THREE.Group | null = null;
+  private ancientRomeMapGroup: THREE.Group | null = null;
+  private industrialColliders: ColliderBox[] = [];
+  private ancientRomeColliders: ColliderBox[] = [];
+  private industrialLoading = false;
+  private ancientRomeLoading = false;
 
   public sectors = new Map<string, SectorData>();
   public allColliders: ColliderBox[] = [];
@@ -384,8 +392,39 @@ export class WorldManager {
     return Math.max(65, this.fog.far * 0.94);
   }
 
+  public getActiveMinimapData(): MinimapMapData | null {
+    return this.activeMapMode === 'ancient_rome'
+      ? this.ancientRomeMinimapData
+      : this.industrialMinimapData;
+  }
+
+  public setActiveMap(mode: 'industrial' | 'ancient_rome') {
+    this.activeMapMode = mode;
+    if (this.industrialMapGroup) {
+      this.industrialMapGroup.visible = mode === 'industrial';
+    }
+    if (this.ancientRomeMapGroup) {
+      this.ancientRomeMapGroup.visible = mode === 'ancient_rome';
+    }
+
+    // Rebuild allColliders without the inactive map's colliders
+    const inactiveSet = new Set(mode === 'industrial' ? this.ancientRomeColliders : this.industrialColliders);
+    const activeList = mode === 'industrial' ? this.industrialColliders : this.ancientRomeColliders;
+    this.allColliders = this.allColliders.filter((c) => !inactiveSet.has(c));
+    const existingSet = new Set(this.allColliders);
+    for (const c of activeList) {
+      if (!existingSet.has(c)) this.allColliders.push(c);
+    }
+
+    if (mode === 'industrial' && !this.industrialMapGroup && !this.industrialLoading) {
+      this.buildIndustrialMapLandmark();
+    } else if (mode === 'ancient_rome' && !this.ancientRomeMapGroup && !this.ancientRomeLoading) {
+      this.buildAncientRomeMapLandmark();
+    }
+  }
+
   private buildGlobalLandmarks() {
-    // Main Map: External 3D Industrial Map (/models/industrial_map.glb)
+    // Default map on startup: Industrial Map (/models/industrial_map.glb)
     this.buildIndustrialMapLandmark();
 
     // 1. Extraction Zone Helipads + Volumetric Animated Green Smoke Columns
@@ -517,9 +556,13 @@ export class WorldManager {
    * normalizes scale to ~115m tactical arena footprint, and generates AABB colliders + raycast targets.
    */
   private buildIndustrialMapLandmark() {
+    if (this.industrialLoading || this.industrialMapGroup) return;
+    this.industrialLoading = true;
     void this.assetManager.loadByUrl('/models/industrial_map.glb').then((res) => {
       if (!res) return;
       const mapGroup = res.group;
+      this.industrialMapGroup = mapGroup;
+      mapGroup.visible = this.activeMapMode === 'industrial';
       mapGroup.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(mapGroup);
       const size = new THREE.Vector3();
@@ -607,7 +650,7 @@ export class WorldManager {
           color: hexColor,
         });
 
-        this.allColliders.push({
+        const collider: ColliderBox = {
           minX: meshBox.min.x,
           maxX: meshBox.max.x,
           minY: meshBox.min.y,
@@ -616,7 +659,11 @@ export class WorldManager {
           maxZ: meshBox.max.z,
           material: 'concrete',
           sectorKey: 'global',
-        });
+        };
+        this.industrialColliders.push(collider);
+        if (this.activeMapMode === 'industrial') {
+          this.allColliders.push(collider);
+        }
       });
 
       // Render crisp Standoff-style top-down tactical minimap directly from industrial_map.glb geometry
@@ -670,6 +717,153 @@ export class WorldManager {
           }
 
           this.industrialMinimapData = {
+            dataUrl: cvs.toDataURL('image/png'),
+            minX: bMinX,
+            maxX: bMaxX,
+            minZ: bMinZ,
+            maxZ: bMaxZ,
+          };
+        }
+      }
+    });
+  }
+
+  /**
+   * Loads Ancient Rome (/models/ancient_rome_map.glb) for Open World mode,
+   * scales to a 220m explorable footprint centered at (0, 0, -48), generates colliders & minimap.
+   */
+  private buildAncientRomeMapLandmark() {
+    if (this.ancientRomeLoading || this.ancientRomeMapGroup) return;
+    this.ancientRomeLoading = true;
+    void this.assetManager.loadByUrl('/models/ancient_rome_map.glb').then((res) => {
+      if (!res) return;
+      const mapGroup = res.group;
+      this.ancientRomeMapGroup = mapGroup;
+      mapGroup.visible = this.activeMapMode === 'ancient_rome';
+
+      mapGroup.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(mapGroup);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+
+      const maxSpan = Math.max(size.x, size.z, 1);
+      const scale = 220 / maxSpan;
+      mapGroup.scale.setScalar(scale);
+      mapGroup.updateMatrixWorld(true);
+
+      const scaledBox = new THREE.Box3().setFromObject(mapGroup);
+      const center = new THREE.Vector3();
+      scaledBox.getCenter(center);
+
+      const meshBox = new THREE.Box3();
+      const meshSize = new THREE.Vector3();
+      const floorCandidates: number[] = [];
+      mapGroup.traverse((obj) => {
+        if (!(obj as THREE.Mesh).isMesh) return;
+        meshBox.setFromObject(obj);
+        meshBox.getSize(meshSize);
+        if (meshSize.y > 0.05 && meshSize.y < 32 && meshSize.x < 180 && meshSize.z < 180) {
+          floorCandidates.push(meshBox.min.y);
+        }
+      });
+      floorCandidates.sort((a, b) => a - b);
+      const groundY =
+        floorCandidates.length > 0
+          ? floorCandidates[Math.floor(floorCandidates.length * 0.12)]
+          : scaledBox.min.y;
+
+      mapGroup.position.set(-center.x, -groundY + 0.04, -center.z - 48);
+      mapGroup.updateMatrixWorld(true);
+
+      this.scene.add(mapGroup);
+      this.raycastMeshes.push(mapGroup);
+
+      const minimapRects: { minX: number; maxX: number; minZ: number; maxZ: number; h: number }[] = [];
+      let mapMinX = Infinity;
+      let mapMaxX = -Infinity;
+      let mapMinZ = Infinity;
+      let mapMaxZ = -Infinity;
+
+      mapGroup.traverse((obj) => {
+        if (!(obj as THREE.Mesh).isMesh) return;
+        const m = obj as THREE.Mesh;
+        m.castShadow = true;
+        m.receiveShadow = true;
+
+        const mats = Array.isArray(m.material) ? m.material : [m.material];
+        for (const mat of mats) {
+          if (!mat) continue;
+          const std = mat as THREE.MeshStandardMaterial;
+          for (const tex of [std.map, std.normalMap, std.roughnessMap, std.metalnessMap]) {
+            if (tex) tex.anisotropy = 8;
+          }
+        }
+
+        meshBox.setFromObject(m);
+        meshBox.getSize(meshSize);
+        mapMinX = Math.min(mapMinX, meshBox.min.x);
+        mapMaxX = Math.max(mapMaxX, meshBox.max.x);
+        mapMinZ = Math.min(mapMinZ, meshBox.min.z);
+        mapMaxZ = Math.max(mapMaxZ, meshBox.max.z);
+
+        if (meshSize.y < 0.7 || meshSize.y > 38) return;
+        if (meshSize.x > 65 && meshSize.z > 65) return;
+        if (meshSize.x < 0.5 && meshSize.z < 0.5) return;
+
+        minimapRects.push({
+          minX: meshBox.min.x,
+          maxX: meshBox.max.x,
+          minZ: meshBox.min.z,
+          maxZ: meshBox.max.z,
+          h: meshSize.y,
+        });
+
+        const collider: ColliderBox = {
+          minX: meshBox.min.x,
+          maxX: meshBox.max.x,
+          minY: meshBox.min.y,
+          maxY: meshBox.max.y,
+          minZ: meshBox.min.z,
+          maxZ: meshBox.max.z,
+          material: 'concrete',
+          sectorKey: 'global',
+        };
+        this.ancientRomeColliders.push(collider);
+        if (this.activeMapMode === 'ancient_rome') {
+          this.allColliders.push(collider);
+        }
+      });
+
+      if (Number.isFinite(mapMinX) && mapMaxX > mapMinX && mapMaxZ > mapMinZ) {
+        const pad = 8;
+        const bMinX = mapMinX - pad;
+        const bMaxX = mapMaxX + pad;
+        const bMinZ = mapMinZ - pad;
+        const bMaxZ = mapMaxZ + pad;
+        const cvs = document.createElement('canvas');
+        cvs.width = 512;
+        cvs.height = 512;
+        const ctx = cvs.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#181410';
+          ctx.fillRect(0, 0, 512, 512);
+          const toPxX = (wx: number) => ((wx - bMinX) / (bMaxX - bMinX)) * 512;
+          const toPxY = (wz: number) => ((wz - bMinZ) / (bMaxZ - bMinZ)) * 512;
+          ctx.fillStyle = '#2a231c';
+          ctx.fillRect(toPxX(mapMinX), toPxY(mapMinZ), toPxX(mapMaxX) - toPxX(mapMinX), toPxY(mapMaxZ) - toPxY(mapMinZ));
+          minimapRects.sort((a, b) => a.h - b.h);
+          for (const r of minimapRects) {
+            const rx = toPxX(r.minX);
+            const ry = toPxY(r.minZ);
+            const rw = Math.max(2, toPxX(r.maxX) - rx);
+            const rh = Math.max(2, toPxY(r.maxZ) - ry);
+            ctx.fillStyle = r.h > 5 ? '#5c4b3a' : '#43382c';
+            ctx.fillRect(rx, ry, rw, rh);
+            ctx.strokeStyle = 'rgba(215, 190, 155, 0.38)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(rx, ry, rw, rh);
+          }
+          this.ancientRomeMinimapData = {
             dataUrl: cvs.toDataURL('image/png'),
             minX: bMinX,
             maxX: bMaxX,

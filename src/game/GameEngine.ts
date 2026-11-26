@@ -737,6 +737,7 @@ export class GameEngine {
       deployBanner = 'ESTANDE DE TIRO — TREINE SUA MIRA (SEM NPCS) · [T] TROCAR ARMA';
     } else if (mode === 'night_raid') {
       this.trainingRange.deactivate();
+      this.world.setActiveMap('industrial');
       this.enemies.ensureUndergroundGuards();
       // Modo Incursão Noturna: sempre cai diretamente no Mapa Industrial (chicken_shoot_gun_-_industrial_map.glb)
       spawnX = 0;
@@ -747,6 +748,7 @@ export class GameEngine {
         : 'INCURSÃO NOTURNA — MAPA INDUSTRIAL';
     } else if (mode === 'desert_op') {
       this.trainingRange.deactivate();
+      this.world.setActiveMap('industrial');
       this.enemies.ensureUndergroundGuards();
       const chosen = this.pickRandomSafeSpawn('desert_op');
       spawnX = chosen.x;
@@ -755,14 +757,15 @@ export class GameEngine {
       deployBanner = 'OPERAÇÃO DESERTO — POSTO ÁRIDO';
     } else {
       this.trainingRange.deactivate();
+      this.world.setActiveMap('ancient_rome');
       this.enemies.ensureUndergroundGuards();
-      // Mundo Aberto também inicia próximo ao Complexo Industrial (0, 0, -48)
+      // Modo Mundo Aberto: mapa Roma Antiga (massive_scale_model_of_ancient_rome.glb)
       spawnX = 0;
       spawnZ = 18;
       spawnYaw = 0;
       deployBanner = isRespawn
-        ? 'REINSERÇÃO TÁTICA — COMPLEXO INDUSTRIAL'
-        : 'INSERÇÃO TÁTICA — COMPLEXO INDUSTRIAL';
+        ? 'REINSERÇÃO — MUNDO ABERTO (ROMA ANTIGA)'
+        : 'MUNDO ABERTO — ROMA ANTIGA';
     }
 
     this.player.resetAtSpawn(spawnX, spawnZ);
@@ -1814,7 +1817,7 @@ export class GameEngine {
       extractionTotalTime: this.missions.extractionTotalTime,
       extractionPoints: this.missions.extractionPoints,
       minimapEntities: this.isTrainingMode ? [] : this.buildMinimapEntities(),
-      minimapMap: this.isTrainingMode ? null : this.world.industrialMinimapData,
+      minimapMap: this.isTrainingMode ? null : this.world.getActiveMinimapData(),
       feed: this.feed.filter((f) => performance.now() - f.timestamp < 5500),
       loadedSectorsCount: this.world.sectors.size,
       fps: this.currentFps,
