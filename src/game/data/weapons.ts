@@ -74,7 +74,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
   // === SUBMACHINE GUNS ===
   mp5: {
     id: 'mp5',
-    name: 'MP5A5',
+    name: 'SMG-9 / Micro UZI',
     category: 'smg',
     caliber: '9x19',
     damage: 24,
@@ -98,7 +98,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
     weight: 2.6,
     value: 1150,
     rarity: 'common',
-    description: 'Submetralhadora 9mm de altíssima precisão em combates urbanos e ambientes confinados.',
+    description: 'Submetralhadora compacta 9mm (SMG-9/UZI) de alta cadência para combates em curta distância.',
     colorPrimary: 0x202226,
     colorSecondary: 0x363a40,
     barrelLength: 0.25,
@@ -108,7 +108,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
   },
   mp7: {
     id: 'mp7',
-    name: 'MP7A2',
+    name: 'KDW-9 Tactical',
     category: 'smg',
     caliber: '9x19',
     damage: 22,
@@ -178,7 +178,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
   },
   m700: {
     id: 'm700',
-    name: 'M700 Long-Range',
+    name: 'Barrett .50 Cal',
     category: 'sniper',
     caliber: '7.62x51',
     damage: 112,
@@ -202,7 +202,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
     weight: 5.8,
     value: 3600,
     rarity: 'legendary',
-    description: 'Plataforma sniper de longo alcance com cano flutuante e ótica de 8x para alvos a 500m+.',
+    description: 'Rifle anti-material calibre .50 de longo alcance com ótica de 8x para alvos a 500m+.',
     colorPrimary: 0x1e2022,
     colorSecondary: 0x8f7e5f,
     barrelLength: 0.74,
@@ -214,7 +214,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
   // === BATTLE RIFLES ===
   scarh: {
     id: 'scarh',
-    name: 'SCAR-H CQC',
+    name: 'VSK-94 Silenciada',
     category: 'battle_rifle',
     caliber: '7.62x51',
     damage: 48,
@@ -238,7 +238,7 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
     weight: 3.8,
     value: 2750,
     rarity: 'epic',
-    description: 'Rifle de batalha pesado 7.62x51mm em acabamento FDE com alto dano contra alvos blindados.',
+    description: 'Carabina tática silenciada VSK-94 de forças especiais com alto impacto contra alvos blindados.',
     colorPrimary: 0x9b865f,
     colorSecondary: 0x26282a,
     barrelLength: 0.46,

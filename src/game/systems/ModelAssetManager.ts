@@ -236,11 +236,15 @@ export class ModelAssetManager {
     const box = new THREE.Box3().setFromObject(clone);
     const size = new THREE.Vector3();
     box.getSize(size);
-    if (size.y > 0.01) {
+    if (size.y > 0.01 && size.y < 500) {
       const normScale = targetHeight / size.y;
       clone.scale.multiplyScalar(normScale);
       clone.updateMatrixWorld(true);
       const scaledBox = new THREE.Box3().setFromObject(clone);
+      const center = new THREE.Vector3();
+      scaledBox.getCenter(center);
+      clone.position.x -= center.x;
+      clone.position.z -= center.z;
       clone.position.y -= scaledBox.min.y;
     }
     return clone;

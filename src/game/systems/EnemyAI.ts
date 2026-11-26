@@ -73,6 +73,11 @@ export class EnemyAI {
     this.mats = mats;
     this.audio = audio;
 
+    // Preload all 3 soldier .glb models immediately so NPCs never show procedural placeholders
+    void this.world.assetManager.loadNormalizedSoldier('soldier_trooper', 1.78);
+    void this.world.assetManager.loadNormalizedSoldier('soldier_heavy', 1.94);
+    void this.world.assetManager.loadNormalizedSoldier('soldier_sniper', 1.78);
+
     // Guaranteed underground facility elite guards
     this.spawnEnemy('elite', 'underground_facility', 'global', new THREE.Vector3(88, -8.5, -124));
     this.spawnEnemy('heavy', 'underground_facility', 'global', new THREE.Vector3(102, -8.5, -131));
@@ -142,7 +147,25 @@ export class EnemyAI {
     model.group.position.copy(pos);
     this.scene.add(model.group);
 
-    // Phase 4: Non-blocking external .glb soldier override when configured in manifest.json
+    // Immediately hide all old procedural soldier geometry (only .glb soldiers are rendered)
+    const invisibleHitMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    });
+    const hitSet = new Set<THREE.Object3D>(model.hitMeshes);
+    model.group.traverse((obj) => {
+      if (obj === model.group || obj === model.muzzleFlash) return;
+      if (hitSet.has(obj)) {
+        (obj as THREE.Mesh).material = invisibleHitMat;
+        (obj as THREE.Mesh).castShadow = false;
+        return;
+      }
+      if ((obj as THREE.Mesh).isMesh) {
+        obj.visible = false;
+      }
+    });
+
     const assetKey =
       enemyClass === 'heavy'
         ? 'soldier_heavy'
@@ -150,25 +173,8 @@ export class EnemyAI {
         ? 'soldier_sniper'
         : 'soldier_trooper';
     const targetHeight = enemyClass === 'heavy' ? 1.94 : 1.78;
-    const invisibleHitMat = new THREE.MeshBasicMaterial({
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-    });
     void this.world.assetManager.loadNormalizedSoldier(assetKey, targetHeight).then((glbSoldier) => {
       if (!glbSoldier) return;
-      const hitSet = new Set<THREE.Object3D>(model.hitMeshes);
-      model.group.traverse((obj) => {
-        if (obj === model.group || obj === model.muzzleFlash) return;
-        if (hitSet.has(obj)) {
-          (obj as THREE.Mesh).material = invisibleHitMat;
-          (obj as THREE.Mesh).castShadow = false;
-          return;
-        }
-        if ((obj as THREE.Mesh).isMesh) {
-          obj.visible = false;
-        }
-      });
       model.group.add(glbSoldier);
     });
 
