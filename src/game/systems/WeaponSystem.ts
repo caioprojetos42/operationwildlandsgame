@@ -195,7 +195,8 @@ export class WeaponSystem {
     this.muzzleLight.position.set(0.18, -0.05, -0.82);
     this.camera.add(this.muzzleLight);
 
-    // Preload all unique FPS weapon .glb models in background so switching weapons is instant
+    // Preload all unique FPS weapon .glb models + unified gloved FPS arms in background
+    void this.world.assetManager.loadByUrl('/models/fp_arms.glb');
     for (const url of new Set(Object.values(WEAPON_GLB_URLS))) {
       void this.world.assetManager.loadByUrl(url);
     }
@@ -222,19 +223,11 @@ export class WeaponSystem {
     let built = this.builtModels.get(state.weaponId);
     if (!built) {
       built = buildWeaponModel(state.weaponId, this.mats);
-      // Adjust unified arms: left arm slightly lower on handguard, right trigger hand clearly visible
-      built.leftArmRestPos.y -= 0.016;
-      built.leftArmGroup.position.copy(built.leftArmRestPos);
-      built.rightArmGroup.position.y += 0.012;
-      built.rightArmGroup.position.z -= 0.018;
-
-      // Hide procedural gun meshes while KEEPING unified leftArmGroup, rightArmGroup & FX nodes visible
+      // Hide ALL old procedural gun & "massinha" arm meshes; keep only FX nodes (muzzlePoint, ejectionPort, muzzleFlash)
       const keepSubtrees = new Set<THREE.Object3D>([
         built.muzzlePoint,
         built.ejectionPort,
         built.muzzleFlash,
-        built.leftArmGroup,
-        built.rightArmGroup,
       ]);
       const isKept = (obj: THREE.Object3D): boolean => {
         let cur: THREE.Object3D | null = obj;
@@ -249,6 +242,26 @@ export class WeaponSystem {
         if ((obj as THREE.Mesh).isMesh) {
           obj.visible = false;
         }
+      });
+
+      // Attach unified real .glb FPS arms (/models/fp_arms.glb) so NO procedural "massinha" arms ever appear
+      const armsTarget = built;
+      void this.world.assetManager.loadByUrl('/models/fp_arms.glb').then((armsRes) => {
+        if (!armsRes) return;
+        const armsGroup = armsRes.group;
+        armsGroup.rotation.y = Math.PI;
+        armsGroup.updateMatrixWorld(true);
+        const abox = new THREE.Box3().setFromObject(armsGroup);
+        const asize = new THREE.Vector3();
+        abox.getSize(asize);
+        const aMax = Math.max(asize.x, asize.z, 0.001);
+        armsGroup.scale.setScalar(0.58 / aMax);
+        armsGroup.updateMatrixWorld(true);
+        const sabox = new THREE.Box3().setFromObject(armsGroup);
+        const acenter = new THREE.Vector3();
+        sabox.getCenter(acenter);
+        armsGroup.position.set(-acenter.x - 0.015, -sabox.max.y + 0.005, -acenter.z + 0.08);
+        armsTarget.group.add(armsGroup);
       });
 
       const glbUrl = WEAPON_GLB_URLS[state.weaponId];
@@ -273,8 +286,17 @@ export class WeaponSystem {
             }
           });
 
-          // Face -Z straight ahead (FPS camera forward)
-          glbGroup.rotation.y = Math.PI;
+          // Measure raw gun meshes first to ensure longest horizontal axis faces -Z (never sideways)
+          glbGroup.updateMatrixWorld(true);
+          const rawGunBox = new THREE.Box3();
+          glbGroup.traverse((obj) => {
+            if ((obj as THREE.Mesh).isMesh && obj.visible) {
+              rawGunBox.expandByObject(obj);
+            }
+          });
+          const rawSize = new THREE.Vector3();
+          rawGunBox.getSize(rawSize);
+          glbGroup.rotation.y = rawSize.x > rawSize.z * 1.12 ? Math.PI * 0.5 : Math.PI;
           glbGroup.updateMatrixWorld(true);
 
           // Measure bounding box ONLY from visible gun meshes (excluding hidden arms)
@@ -290,16 +312,14 @@ export class WeaponSystem {
           const cat = WEAPONS[wId].category;
           const targetLen =
             cat === 'pistol'
-              ? 0.25
+              ? 0.24
               : cat === 'melee'
-              ? 0.28
+              ? 0.26
               : cat === 'smg'
-              ? 0.44
-              : cat === 'sniper'
-              ? 0.84
-              : cat === 'launcher' || cat === 'lmg'
-              ? 0.78
-              : 0.66;
+              ? 0.42
+              : cat === 'sniper' || cat === 'launcher' || cat === 'lmg'
+              ? 0.72
+              : 0.58;
           const normScale = targetLen / maxDim;
           glbGroup.scale.setScalar(normScale);
           glbGroup.updateMatrixWorld(true);
@@ -312,11 +332,11 @@ export class WeaponSystem {
           });
           const scaledCenter = new THREE.Vector3();
           scaledGunBox.getCenter(scaledCenter);
-          // Align gun cleanly inside the unified hands (straight & level)
+          // Lock top of every weapon at y <= +0.035 so NONE ever block the center crosshair or sit too high
           glbGroup.position.set(
             -scaledCenter.x,
-            -scaledCenter.y - 0.008,
-            -scaledCenter.z - (cat === 'pistol' ? 0.06 : 0.05)
+            0.035 - scaledGunBox.max.y,
+            -scaledCenter.z - (cat === 'pistol' || cat === 'melee' ? 0.08 : 0.06)
           );
 
           targetBuilt.group.add(glbGroup);
