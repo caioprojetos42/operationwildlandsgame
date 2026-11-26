@@ -117,7 +117,7 @@ const DEPLOY_MODES: {
   {
     id: 'night_raid',
     title: 'INCURSÃO NOTURNA',
-    subtitle: 'Combate tático sob a noite!',
+    subtitle: 'Mapa Industrial — Combate tático noturno!',
     image: modeOpenWorldImg,
   },
   {

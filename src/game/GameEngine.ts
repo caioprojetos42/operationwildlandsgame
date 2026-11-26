@@ -735,10 +735,28 @@ export class GameEngine {
       spawnZ = TrainingRange.SPAWN_Z;
       spawnYaw = 0; // Facing directly downrange (-Z) toward all targets!
       deployBanner = 'ESTANDE DE TIRO — TREINE SUA MIRA (SEM NPCS) · [T] TROCAR ARMA';
+    } else if (mode === 'night_raid') {
+      this.trainingRange.deactivate();
+      this.enemies.ensureUndergroundGuards();
+      // Modo Incursão Noturna: sempre cai diretamente no Mapa Industrial (chicken_shoot_gun_-_industrial_map.glb)
+      spawnX = 0;
+      spawnZ = 18;
+      spawnYaw = 0;
+      deployBanner = isRespawn
+        ? 'REINSERÇÃO — INCURSÃO NOTURNA (MAPA INDUSTRIAL)'
+        : 'INCURSÃO NOTURNA — MAPA INDUSTRIAL';
+    } else if (mode === 'desert_op') {
+      this.trainingRange.deactivate();
+      this.enemies.ensureUndergroundGuards();
+      const chosen = this.pickRandomSafeSpawn('desert_op');
+      spawnX = chosen.x;
+      spawnZ = chosen.z;
+      spawnYaw = chosen.yaw;
+      deployBanner = 'OPERAÇÃO DESERTO — POSTO ÁRIDO';
     } else {
       this.trainingRange.deactivate();
       this.enemies.ensureUndergroundGuards();
-      // Always deploy directly into the main 3D Industrial Map (0, 0, -48) facing -Z
+      // Mundo Aberto também inicia próximo ao Complexo Industrial (0, 0, -48)
       spawnX = 0;
       spawnZ = 18;
       spawnYaw = 0;
