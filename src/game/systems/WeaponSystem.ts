@@ -76,21 +76,15 @@ const _camUp = new THREE.Vector3();
 const _camFwd = new THREE.Vector3();
 
 const WEAPON_GLB_URLS: Record<WeaponId, string> = {
-  ar15: '/models/weapon_m4a1.glb',
   m4a1: '/models/weapon_m4a1.glb',
   ak74: '/models/weapon_ak74.glb',
-  fal: '/models/weapon_ak74.glb',
-  g36: '/models/weapon_vsk.glb',
   scarh: '/models/weapon_vsk.glb',
   mp5: '/models/weapon_mp5.glb',
   mp7: '/models/weapon_smg_kdw.glb',
-  ump45: '/models/weapon_smg_kdw.glb',
-  m870: '/models/weapon_saiga12.glb',
   saiga12: '/models/weapon_saiga12.glb',
   m700: '/models/weapon_50cal.glb',
   m24: '/models/weapon_sniper.glb',
   glock17: '/models/weapon_pistol.glb',
-  m1911: '/models/weapon_pistol.glb',
 };
 
 interface WeaponGlbAnimRig {
@@ -216,6 +210,18 @@ export class WeaponSystem {
     let built = this.builtModels.get(state.weaponId);
     if (!built) {
       built = buildWeaponModel(state.weaponId, this.mats);
+      // Immediately hide all procedural gun/arm geometry; only .glb models are rendered
+      const keepNodes = new Set<THREE.Object3D>([
+        built.muzzlePoint,
+        built.ejectionPort,
+        built.muzzleFlash,
+      ]);
+      built.group.traverse((obj) => {
+        if (obj === built!.group || keepNodes.has(obj)) return;
+        if ((obj as THREE.Mesh).isMesh) {
+          obj.visible = false;
+        }
+      });
       const glbUrl = WEAPON_GLB_URLS[state.weaponId];
       if (glbUrl) {
         const wId = state.weaponId;

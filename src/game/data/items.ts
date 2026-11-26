@@ -402,8 +402,8 @@ export function generateContextualLoot(
   const highTier = regionId === 'underground_facility' || regionId === 'blacksite' || regionId === 'mountain_range';
 
   if (containerType === 'weapon_case' || containerType === 'supply_drop') {
-    const highWeapons: WeaponId[] = ['m4a1', 'g36', 'scarh', 'fal', 'm24', 'm700', 'saiga12', 'mp7'];
-    const midWeapons: WeaponId[] = ['ar15', 'ak74', 'mp5', 'ump45', 'm870', 'm1911'];
+    const highWeapons: WeaponId[] = ['m4a1', 'scarh', 'm24', 'm700', 'saiga12', 'mp7'];
+    const midWeapons: WeaponId[] = ['ak74', 'mp5', 'glock17'];
     const chosen = highTier || containerType === 'supply_drop' ? pick(highWeapons, rand) : pick(midWeapons, rand);
     items.push(createInventoryEntry(`wpn_${chosen}`, 1));
     const ammoItem = CALIBER_TO_AMMO_ITEM[WEAPONS[chosen].caliber];
@@ -420,7 +420,7 @@ export function generateContextualLoot(
     items.push(createInventoryEntry(pick(ammoPool, rand), 24 + Math.floor(rand() * 36)));
     items.push(createInventoryEntry(pick(ammoPool, rand), 18 + Math.floor(rand() * 24)));
     if (rand() < 0.42) {
-      const pool: WeaponId[] = highTier ? ['m4a1', 'g36', 'scarh', 'mp7', 'saiga12'] : ['ar15', 'ak74', 'mp5', 'ump45', 'm870'];
+      const pool: WeaponId[] = highTier ? ['m4a1', 'scarh', 'mp7', 'saiga12'] : ['ak74', 'mp5', 'glock17'];
       items.push(createInventoryEntry(`wpn_${pick(pool, rand)}`, 1));
     }
     if (rand() < 0.45) items.push(createInventoryEntry('grenade_frag', 1 + Math.floor(rand() * 2)));

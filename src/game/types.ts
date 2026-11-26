@@ -8,21 +8,15 @@ export type GamePhase =
   | 'extracted';
 
 export type WeaponId =
-  | 'ar15'
   | 'ak74'
   | 'm4a1'
-  | 'g36'
   | 'mp5'
   | 'mp7'
-  | 'ump45'
   | 'm24'
   | 'm700'
   | 'scarh'
-  | 'fal'
-  | 'm870'
   | 'saiga12'
-  | 'glock17'
-  | 'm1911';
+  | 'glock17';
 
 export type WeaponCategory =
   | 'assault'

@@ -384,22 +384,7 @@ export class WorldManager {
   }
 
   private buildGlobalLandmarks() {
-    // 0A. Serrated Snow-Streaked Alpine Horizon Mountain Range
-    const mountainRing = this.terrain.createDistantMountainRing(this.mats);
-    this.scene.add(mountainRing);
-
-    // 0B. 3D Terrain-Conforming Asphalt Roads, Rutted Dirt Tracks & Railway Beds
-    const roadNetwork = this.terrain.createRoadAndRailNetworkGroup(this.mats);
-    this.scene.add(roadNetwork);
-
-    // 0C. Handcrafted DESERT OUTPOST Hero Military Base (built globally so it's always visible from afar!)
-    const desertGroup = new THREE.Group();
-    const desertColliders: ColliderBox[] = [];
-    this.buildDesertOutpostMasterCompound(desertGroup, 'global', desertColliders);
-    this.scene.add(desertGroup);
-    this.raycastMeshes.push(desertGroup);
-
-    // 0D. External 3D Industrial Map Compound (/models/industrial_map.glb) at Blacksite Center
+    // Main Map: External 3D Industrial Map (/models/industrial_map.glb)
     this.buildIndustrialMapLandmark();
 
     // 1. Extraction Zone Helipads + Volumetric Animated Green Smoke Columns
@@ -1142,7 +1127,7 @@ export class WorldManager {
     const lodHighObjects: THREE.Object3D[] = [];
     const lodLowObjects: THREE.Object3D[] = [];
     const nearClutterObjects: THREE.Object3D[] = [];
-    this.populateSectorStructures(sx, sz, centerX, centerZ, region.id, key, group, colliders);
+    // Old procedural map structures removed; industrial_map.glb is the main playable map.
     this.populateSectorNature(
       sx,
       sz,
