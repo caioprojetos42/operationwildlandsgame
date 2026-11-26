@@ -533,15 +533,32 @@ export class WorldManager {
       const center = new THREE.Vector3();
       scaledBox.getCenter(center);
 
-      mapGroup.position.set(-center.x, -scaledBox.min.y + 0.03, -center.z - 48);
+      // Find true playable ground floor Y using median/low-percentile of normal meshes
+      // (ignores deep outlier vertices like Powerpole_A_B extending to -2491)
+      const meshBox = new THREE.Box3();
+      const meshSize = new THREE.Vector3();
+      const floorCandidates: number[] = [];
+      mapGroup.traverse((obj) => {
+        if (!(obj as THREE.Mesh).isMesh) return;
+        meshBox.setFromObject(obj);
+        meshBox.getSize(meshSize);
+        if (meshSize.y > 0.05 && meshSize.y < 18 && meshSize.x < 90 && meshSize.z < 90) {
+          floorCandidates.push(meshBox.min.y);
+        }
+      });
+      floorCandidates.sort((a, b) => a - b);
+      const groundY =
+        floorCandidates.length > 0
+          ? floorCandidates[Math.floor(floorCandidates.length * 0.12)]
+          : 0;
+
+      mapGroup.position.set(-center.x, -groundY + 0.04, -center.z - 48);
       mapGroup.updateMatrixWorld(true);
 
       this.scene.add(mapGroup);
       this.raycastMeshes.push(mapGroup);
 
       // Auto-generate AABB colliders for solid walls, containers, and props inside the GLB map
-      const meshBox = new THREE.Box3();
-      const meshSize = new THREE.Vector3();
       mapGroup.traverse((obj) => {
         if (!(obj as THREE.Mesh).isMesh) return;
         const m = obj as THREE.Mesh;
