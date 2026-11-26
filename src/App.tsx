@@ -14,12 +14,7 @@ export default function App() {
 
   const [hud, setHud] = useState<HUDState | null>(null);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
-  const [introStage, setIntroStage] = useState<'loop' | 'cinematic' | 'done'>('loop');
-  const cinematicRef = useRef<HTMLVideoElement | null>(null);
-
-  const advanceToCinematic = useCallback(() => {
-    setIntroStage((prev) => (prev === 'loop' ? 'cinematic' : prev));
-  }, []);
+  const [introStage, setIntroStage] = useState<'loop' | 'done'>('loop');
 
   const finishIntro = useCallback(() => {
     setIntroStage('done');
@@ -27,31 +22,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (introStage !== 'cinematic') return;
-    const v = cinematicRef.current;
-    if (!v) return;
-    v.currentTime = 0;
-    v.muted = settings.muted;
-    v.play().catch(() => {
-      v.muted = true;
-      v.play().catch(() => {});
-    });
-  }, [introStage, settings.muted]);
-
-  useEffect(() => {
     if (introStage === 'done') return;
     const onKey = (e: KeyboardEvent) => {
       if (introStage === 'loop') {
-        e.preventDefault();
-        advanceToCinematic();
-      } else if (introStage === 'cinematic' && (e.key === 'Escape' || e.key === ' ')) {
         e.preventDefault();
         finishIntro();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [introStage, advanceToCinematic, finishIntro]);
+  }, [introStage, finishIntro]);
 
   // Mount isolated WebGL canvas once so React state updates never tear down the 3D scene
   useEffect(() => {
@@ -160,7 +140,7 @@ export default function App() {
       {/* Game Shell Overlays */}
       {introStage === 'loop' && (
         <div
-          onClick={advanceToCinematic}
+          onClick={finishIntro}
           role="button"
           tabIndex={0}
           className="fixed inset-0 z-50 w-screen h-screen bg-black cursor-pointer select-none overflow-hidden"
@@ -187,29 +167,6 @@ export default function App() {
               </span>
             </div>
           </div>
-        </div>
-      )}
-
-      {introStage === 'cinematic' && (
-        <div className="fixed inset-0 z-50 w-screen h-screen bg-black select-none overflow-hidden">
-          <video
-            ref={cinematicRef}
-            src="/assets/intro_cinematic.mp4"
-            autoPlay
-            preload="auto"
-            playsInline
-            muted={settings.muted}
-            onEnded={finishIntro}
-            onError={finishIntro}
-            className="w-full h-full object-cover"
-          />
-          <button
-            type="button"
-            onClick={finishIntro}
-            className="absolute bottom-6 right-6 z-10 px-4 py-2 bg-[#0a0d10]/75 hover:bg-[#141a20]/90 backdrop-blur-md border border-white/20 hover:border-[#f5c542]/70 text-[11px] font-mono-hud tracking-[0.16em] uppercase text-[#dce2e8] hover:text-[#f5c542] cursor-pointer"
-          >
-            PULAR CINEMÁTICA [ESC]
-          </button>
         </div>
       )}
 
