@@ -183,14 +183,15 @@ export const TacticalHUD: React.FC<TacticalHUDProps> = ({ hud, onResumePointerLo
 
       {/* TOP-LEFT: Tactical Minimap & Region Readout */}
       <div className="absolute top-4 left-4 flex flex-col gap-1.5">
-        <div className="relative w-[156px] h-[156px] border border-[#566350] bg-[#0a0f0c]/92 shadow-[0_6px_22px_rgba(0,0,0,0.55)] overflow-hidden">
-          <canvas ref={minimapRef} width={156} height={156} className="w-full h-full block" />
-          <div className="absolute top-1 left-1.5 text-[9px] font-mono-hud font-bold text-[#b8cf96]">N</div>
-          <div className="absolute bottom-1 right-1.5 text-[9px] font-mono-hud text-[#9ba996]">
+        <div className="relative w-[160px] h-[160px] border border-[#687a5e]/80 bg-[#0a0f0c]/88 backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.65)] overflow-hidden">
+          <canvas ref={minimapRef} width={160} height={160} className="w-full h-full block" />
+          <div className="pointer-events-none absolute inset-0 border border-white/10" />
+          <div className="absolute top-1 left-1.5 text-[9px] font-mono-hud font-bold text-[#c6df9e] drop-shadow">N</div>
+          <div className="absolute bottom-1 right-1.5 text-[9px] font-mono-hud text-[#aebda8] bg-[#0a0f0c]/70 px-1">
             {hud.playerX}, {hud.playerZ}
           </div>
         </div>
-        <div className="bg-[#0a0f0c]/90 border-l-2 border-[#d4a54a] px-2.5 py-1.5 max-w-[214px] shadow-[0_4px_16px_rgba(0,0,0,0.45)]">
+        <div className="bg-[#0a0f0c]/85 backdrop-blur-md border-l-2 border-[#e3b552] px-2.5 py-1.5 max-w-[214px] shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
           <div className="text-[11px] font-tactical font-bold tracking-wider uppercase text-[#edf2e8] truncate">
             {hud.isTrainingMode ? 'ESTANDE DE TIRO' : hud.currentRegion.name}
           </div>
@@ -360,22 +361,22 @@ export const TacticalHUD: React.FC<TacticalHUDProps> = ({ hud, onResumePointerLo
 
         {/* Dynamic Hip-Fire Crosshair (hidden during ADS or vehicle driving) */}
         {!hud.aiming && !hud.inVehicle && !hud.hasScopeOverlay && (
-          <div className="relative flex items-center justify-center">
-            <div className="w-1 h-1 bg-[#edf5e8]/90 rounded-full" />
+          <div className="relative flex items-center justify-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.92)]">
+            <div className="w-1 h-1 bg-[#f4faef] rounded-full" />
             <div
-              className="absolute w-3 h-[1.5px] bg-[#edf5e8]/85"
+              className="absolute w-3 h-[1.5px] bg-[#f4faef]/90"
               style={{ transform: `translateX(-${Math.max(10, Math.min(44, hud.spreadPx))}px)` }}
             />
             <div
-              className="absolute w-3 h-[1.5px] bg-[#edf5e8]/85"
+              className="absolute w-3 h-[1.5px] bg-[#f4faef]/90"
               style={{ transform: `translateX(${Math.max(10, Math.min(44, hud.spreadPx))}px)` }}
             />
             <div
-              className="absolute h-3 w-[1.5px] bg-[#edf5e8]/85"
+              className="absolute h-3 w-[1.5px] bg-[#f4faef]/90"
               style={{ transform: `translateY(-${Math.max(10, Math.min(44, hud.spreadPx))}px)` }}
             />
             <div
-              className="absolute h-3 w-[1.5px] bg-[#edf5e8]/85"
+              className="absolute h-3 w-[1.5px] bg-[#f4faef]/90"
               style={{ transform: `translateY(${Math.max(10, Math.min(44, hud.spreadPx))}px)` }}
             />
           </div>
@@ -383,14 +384,14 @@ export const TacticalHUD: React.FC<TacticalHUDProps> = ({ hud, onResumePointerLo
 
         {/* Hitmarker X */}
         {hud.hitmarkerType !== 'none' && (
-          <svg width="28" height="28" viewBox="0 0 28 28" className="absolute">
+          <svg width="28" height="28" viewBox="0 0 28 28" className="absolute drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
             <g
               stroke={
                 hud.hitmarkerType === 'kill' || hud.hitmarkerType === 'head'
                   ? '#ff3d2e'
                   : '#ffffff'
               }
-              strokeWidth={hud.hitmarkerType === 'kill' ? '2.5' : '1.8'}
+              strokeWidth={hud.hitmarkerType === 'kill' ? '2.6' : '1.9'}
             >
               <line x1="4" y1="4" x2="10" y2="10" />
               <line x1="24" y1="4" x2="18" y2="10" />

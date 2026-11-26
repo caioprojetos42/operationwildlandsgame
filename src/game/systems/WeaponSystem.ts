@@ -96,10 +96,13 @@ export class WeaponSystem {
   private burstDelay = 0;
   private kickbackZ = 0;
   private kickRotX = 0;
+  private recoilRollZ = 0;
   private boltKick = 0;
   private swayX = 0;
   private swayY = 0;
   private bobPhase = 0;
+  private idlePhase = 0;
+  private sprintBlend = 0;
   private switchAnim = 0;
 
   // Pooled projectiles, grenades, tracers, impact particles, smoke sprites, brass casings & bullet decals
@@ -301,8 +304,9 @@ export class WeaponSystem {
       }
     }
 
-    this.kickbackZ = Math.min(0.11, this.kickbackZ + (spec.category === 'sniper' || spec.category === 'shotgun' ? 0.085 : 0.036));
-    this.kickRotX = Math.min(0.24, this.kickRotX + spec.recoilPitch * 2.5);
+    this.kickbackZ = Math.min(0.11, this.kickbackZ + (spec.category === 'sniper' || spec.category === 'shotgun' ? 0.085 : 0.038));
+    this.kickRotX = Math.min(0.24, this.kickRotX + spec.recoilPitch * 2.6);
+    this.recoilRollZ = (Math.random() - 0.5) * (spec.category === 'sniper' || spec.category === 'shotgun' ? 0.08 : 0.042) * (1 - this.adsBlend * 0.55);
 
     // Camera recoil
     const stanceMult = crouching ? 0.72 : 1.0;
@@ -754,17 +758,25 @@ export class WeaponSystem {
 
     this.kickbackZ = THREE.MathUtils.damp(this.kickbackZ, 0, 14, dt);
     this.kickRotX = THREE.MathUtils.damp(this.kickRotX, 0, 14, dt);
+    this.recoilRollZ = THREE.MathUtils.damp(this.recoilRollZ, 0, 16, dt);
     this.boltKick = THREE.MathUtils.damp(this.boltKick, 0, 22, dt);
-    this.swayX = THREE.MathUtils.damp(this.swayX, 0, 10, dt);
-    this.swayY = THREE.MathUtils.damp(this.swayY, 0, 10, dt);
+    this.swayX = THREE.MathUtils.damp(this.swayX, 0, 11, dt);
+    this.swayY = THREE.MathUtils.damp(this.swayY, 0, 11, dt);
     this.dynamicSpread = THREE.MathUtils.damp(this.dynamicSpread, 0, 7, dt);
-    this.switchAnim = THREE.MathUtils.damp(this.switchAnim, 0, 9, dt);
+    this.switchAnim = THREE.MathUtils.damp(this.switchAnim, 0, 10, dt);
+
+    const targetSprint = sprinting && this.adsBlend < 0.12 && !this.reloading ? 1 : 0;
+    this.sprintBlend = THREE.MathUtils.damp(this.sprintBlend, targetSprint, 10, dt);
+    this.idlePhase += dt * 1.65;
 
     if (moveSpeedRatio > 0.05) {
       this.bobPhase += dt * (sprinting ? 12.5 : 8.2) * moveSpeedRatio;
     }
 
-    const bobAmp = (1 - this.adsBlend * 0.85) * moveSpeedRatio * (sprinting ? 0.018 : 0.0085);
+    const idleScale = (1 - this.adsBlend * 0.85) * (1 - moveSpeedRatio * 0.6);
+    const idleX = Math.sin(this.idlePhase) * 0.0016 * idleScale;
+    const idleY = Math.sin(this.idlePhase * 2.0) * 0.0012 * idleScale;
+    const bobAmp = (1 - this.adsBlend * 0.85) * moveSpeedRatio * (sprinting ? 0.019 : 0.0088);
     const cat = spec?.category ?? 'assault';
     // Standoff-2-faithful close, bold bottom-right weapon & gloved-hand framing per weapon class
     const hipX =
@@ -847,18 +859,29 @@ export class WeaponSystem {
       lArm.position.z = THREE.MathUtils.damp(lArm.position.z, lRest.z + handTargetOffZ, 16, dt);
     }
 
-    const sprintTilt = sprinting && this.adsBlend < 0.1 ? 0.35 : 0;
+    const sprintTilt = this.sprintBlend * 0.36;
+    const swayRotFactor = 1 - this.adsBlend * 0.68;
 
     this.weaponRoot.position.set(
-      THREE.MathUtils.lerp(hipX, adsX, this.adsBlend) + this.swayX + Math.cos(this.bobPhase * 0.5) * bobAmp,
-      THREE.MathUtils.lerp(hipY, adsY, this.adsBlend) + this.swayY + Math.abs(Math.sin(this.bobPhase)) * bobAmp - reloadDip - this.switchAnim * 0.28,
+      THREE.MathUtils.lerp(hipX, adsX, this.adsBlend) +
+        this.swayX +
+        idleX +
+        Math.cos(this.bobPhase * 0.5) * bobAmp -
+        this.sprintBlend * 0.045,
+      THREE.MathUtils.lerp(hipY, adsY, this.adsBlend) +
+        this.swayY +
+        idleY +
+        Math.abs(Math.sin(this.bobPhase)) * bobAmp -
+        reloadDip -
+        this.switchAnim * 0.28 -
+        this.sprintBlend * 0.028,
       THREE.MathUtils.lerp(hipZ, adsZ, this.adsBlend) + this.kickbackZ
     );
     const hipYawBias = THREE.MathUtils.lerp(hipYawRest, 0, this.adsBlend);
     this.weaponRoot.rotation.set(
-      this.kickRotX + reloadPitchX - sprintTilt * 0.5,
-      hipYawBias + sprintTilt * 0.85,
-      sprintTilt * 0.35 + reloadRollZ
+      this.kickRotX + reloadPitchX - sprintTilt * 0.48 + this.swayY * 1.45 * swayRotFactor - this.switchAnim * 0.35,
+      hipYawBias + sprintTilt * 0.88 - this.swayX * 1.55 * swayRotFactor,
+      sprintTilt * 0.38 + reloadRollZ + this.recoilRollZ - this.swayX * 2.1 * swayRotFactor
     );
 
     // Update physical ballistic projectiles (Sniper rifles)

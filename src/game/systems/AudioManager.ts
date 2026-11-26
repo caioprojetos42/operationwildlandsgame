@@ -245,41 +245,92 @@ export class AudioManager {
     noise.start(now);
     noise.stop(now + duration + 0.02);
 
-    // 2. Low-end ballistic punch (sine pitch drop)
+    // 2. Low-end ballistic chest punch (sub-bass + transient)
     const osc = this.ctx.createOscillator();
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(suppressed ? punchFreq * 1.4 : punchFreq, now);
-    osc.frequency.exponentialRampToValueAtTime(32, now + (suppressed ? 0.05 : 0.11));
+    osc.frequency.exponentialRampToValueAtTime(28, now + (suppressed ? 0.05 : 0.12));
 
     const oGain = this.ctx.createGain();
-    oGain.gain.setValueAtTime(suppressed ? vol * 0.45 : vol * 0.9, now);
-    oGain.gain.exponentialRampToValueAtTime(0.001, now + (suppressed ? 0.06 : 0.13));
+    oGain.gain.setValueAtTime(suppressed ? vol * 0.45 : vol * 0.95, now);
+    oGain.gain.exponentialRampToValueAtTime(0.001, now + (suppressed ? 0.06 : 0.14));
 
     osc.connect(oGain).connect(dest);
     osc.start(now);
-    osc.stop(now + 0.15);
+    osc.stop(now + 0.16);
+
+    // 3. Outdoor acoustic canyon / compound echo tail (unsuppressed shots)
+    if (!suppressed) {
+      const tailSrc = this.ctx.createBufferSource();
+      tailSrc.buffer = this.noiseBuffer;
+      const tailFilter = this.ctx.createBiquadFilter();
+      tailFilter.type = 'bandpass';
+      tailFilter.frequency.setValueAtTime(580, now + 0.04);
+      tailFilter.frequency.exponentialRampToValueAtTime(190, now + duration + 0.35);
+      tailFilter.Q.value = 0.85;
+      const tailGain = this.ctx.createGain();
+      tailGain.gain.setValueAtTime(0.001, now);
+      tailGain.gain.linearRampToValueAtTime(vol * 0.28, now + 0.055);
+      tailGain.gain.exponentialRampToValueAtTime(0.001, now + duration + 0.36);
+      tailSrc.connect(tailFilter).connect(tailGain).connect(dest);
+      tailSrc.start(now + 0.03);
+      tailSrc.stop(now + duration + 0.38);
+    }
+  }
+
+  public playBulletWhiz(worldPos: THREE.Vector3) {
+    if (!this.ctx || !this.noiseBuffer || !this.sfxGain) return;
+    const now = this.ctx.currentTime;
+    const dest = this.createSpatialOut(worldPos, 35);
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(3400, now);
+    bp.frequency.exponentialRampToValueAtTime(750, now + 0.09);
+    bp.Q.value = 3.2;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.28, now + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+    src.connect(bp).connect(gain).connect(dest);
+    src.start(now);
+    src.stop(now + 0.11);
   }
 
   public playReload(stage: 'start' | 'end') {
-    if (!this.ctx || !this.sfxGain) return;
+    if (!this.ctx || !this.noiseBuffer || !this.sfxGain) return;
     const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    osc.type = 'square';
-    const gain = this.ctx.createGain();
-    if (stage === 'start') {
-      osc.frequency.setValueAtTime(340, now);
-      osc.frequency.exponentialRampToValueAtTime(160, now + 0.06);
-      gain.gain.setValueAtTime(0.11, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-    } else {
-      osc.frequency.setValueAtTime(220, now);
-      osc.frequency.setValueAtTime(520, now + 0.045);
-      gain.gain.setValueAtTime(0.14, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+
+    // Crisp metallic mechanical transient (mag release / bolt lock)
+    const clickSrc = this.ctx.createBufferSource();
+    clickSrc.buffer = this.noiseBuffer;
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(stage === 'start' ? 1900 : 2800, now);
+    bp.Q.value = 4.5;
+    const nGain = this.ctx.createGain();
+    nGain.gain.setValueAtTime(stage === 'start' ? 0.18 : 0.24, now);
+    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+    clickSrc.connect(bp).connect(nGain).connect(this.sfxGain);
+    clickSrc.start(now);
+    clickSrc.stop(now + 0.06);
+
+    if (stage === 'end') {
+      // Secondary bolt-carrier forward clack
+      const boltSrc = this.ctx.createBufferSource();
+      boltSrc.buffer = this.noiseBuffer;
+      const boltBp = this.ctx.createBiquadFilter();
+      boltBp.type = 'bandpass';
+      boltBp.frequency.setValueAtTime(3400, now + 0.065);
+      boltBp.Q.value = 5.0;
+      const bGain = this.ctx.createGain();
+      bGain.gain.setValueAtTime(0.22, now + 0.065);
+      bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.125);
+      boltSrc.connect(boltBp).connect(bGain).connect(this.sfxGain);
+      boltSrc.start(now + 0.065);
+      boltSrc.stop(now + 0.13);
     }
-    osc.connect(gain).connect(this.sfxGain);
-    osc.start(now);
-    osc.stop(now + 0.12);
   }
 
   public playFootstep(surface: SurfaceType, sprinting: boolean, crouching: boolean) {

@@ -27,6 +27,8 @@ export interface ProceduralMaterials {
   militaryCrate: THREE.MeshStandardMaterial;
   sandbag: THREE.MeshStandardMaterial;
   brickUrban: THREE.MeshStandardMaterial;
+  desertStucco: THREE.MeshStandardMaterial;
+  metalPanel: THREE.MeshStandardMaterial;
   bunkerSteel: THREE.MeshStandardMaterial;
   gunMetal: THREE.MeshStandardMaterial;
   polymerDark: THREE.MeshStandardMaterial;
@@ -156,10 +158,12 @@ export class TextureLibrary {
     const dirtPack = this.createDirtRoadPBR(512, aniso);
     const railBedAlbedo = this.createRailBedTexture(512, aniso);
 
-    // 4. Crates, Sandbags, Urban Brick, Signage, Chainlink
-    const woodAlbedo = this.createWoodCrateTexture(512, '#775a3b', '#4d371f', aniso);
-    const milCrateAlbedo = this.createMilitaryCrateTexture(512, aniso);
+    // 4. Crates, Sandbags, Urban Brick, Desert Stucco, Riveted Metal Panels, Signage, Chainlink
+    const woodPack = this.createWoodCratePBR(512, '#7d5f3e', '#45311c', aniso);
+    const milCratePack = this.createMilitaryCratePBR(512, aniso);
     const brickPack = this.createBrickPBR(512, aniso, 3);
+    const stuccoPack = this.createDesertStuccoPBR(512, aniso, 2);
+    const metalPanelPack = this.createMetalPanelPBR(512, '#434b4d', aniso, 2);
     const sandbagPack = this.createSandbagPBR(256, aniso, 4);
     const chainLinkAlbedo = this.createChainLinkTexture(256, aniso);
     const militarySignAlbedo = this.createMilitarySignTexture(512, aniso);
@@ -251,18 +255,20 @@ export class TextureLibrary {
         polygonOffsetUnits: -2,
       }),
       woodCrate: new THREE.MeshStandardMaterial({
-        map: woodAlbedo,
-        normalMap: concretePack.normal,
-        normalScale: new THREE.Vector2(0.5, 0.5),
-        roughness: 0.86,
+        map: woodPack.albedo,
+        normalMap: woodPack.normal,
+        normalScale: new THREE.Vector2(1.0, 1.0),
+        roughnessMap: woodPack.roughness,
+        roughness: 0.88,
         metalness: 0.04,
       }),
       militaryCrate: new THREE.MeshStandardMaterial({
-        map: milCrateAlbedo,
-        normalMap: concreteDarkPack.normal,
-        normalScale: new THREE.Vector2(0.45, 0.45),
-        roughness: 0.54,
-        metalness: 0.36,
+        map: milCratePack.albedo,
+        normalMap: milCratePack.normal,
+        normalScale: new THREE.Vector2(0.85, 0.85),
+        roughnessMap: milCratePack.roughness,
+        roughness: 0.56,
+        metalness: 0.34,
       }),
       sandbag: new THREE.MeshStandardMaterial({
         map: sandbagPack.albedo,
@@ -278,11 +284,29 @@ export class TextureLibrary {
         roughness: 0.88,
         metalness: 0.04,
       }),
+      desertStucco: new THREE.MeshStandardMaterial({
+        map: stuccoPack.albedo,
+        normalMap: stuccoPack.normal,
+        normalScale: new THREE.Vector2(1.05, 1.05),
+        roughnessMap: stuccoPack.roughness,
+        roughness: 0.91,
+        metalness: 0.02,
+      }),
+      metalPanel: new THREE.MeshStandardMaterial({
+        map: metalPanelPack.albedo,
+        normalMap: metalPanelPack.normal,
+        normalScale: new THREE.Vector2(0.9, 0.9),
+        roughnessMap: metalPanelPack.roughness,
+        roughness: 0.52,
+        metalness: 0.68,
+        envMapIntensity: 1.25,
+      }),
       bunkerSteel: new THREE.MeshStandardMaterial({
-        map: concreteDarkPack.albedo,
-        normalMap: gunNormalMap,
-        normalScale: new THREE.Vector2(0.65, 0.65),
-        roughness: 0.38,
+        map: metalPanelPack.albedo,
+        normalMap: metalPanelPack.normal,
+        normalScale: new THREE.Vector2(0.7, 0.7),
+        roughnessMap: metalPanelPack.roughness,
+        roughness: 0.42,
         metalness: 0.82,
         envMapIntensity: 1.35,
       }),
@@ -688,36 +712,141 @@ export class TextureLibrary {
     return this.register(finalizeTexture(canvas, aniso, true, 1, 1));
   }
 
-  private createWoodCrateTexture(size: number, base: string, dark: string, aniso: number) {
+  private createWoodCratePBR(size: number, base: string, dark: string, aniso: number) {
     const [canvas, ctx] = makeCanvas(size);
+    const [hCanvas, hCtx] = makeCanvas(size);
+    const rand = seededRand(611);
+
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, size, size);
+    hCtx.fillStyle = '#8a8a8a';
+    hCtx.fillRect(0, 0, size, size);
+
+    // Rich horizontal wood grain fibers per plank
+    for (let p = 0; p < 8; p++) {
+      const py = p * (size / 8);
+      const ph = size / 8;
+      const tint = (rand() - 0.5) * 22;
+      ctx.fillStyle = `rgba(${115 + tint}, ${86 + tint * 0.7}, ${52 + tint * 0.5}, 0.35)`;
+      ctx.fillRect(0, py, size, ph);
+
+      for (let g = 0; g < 14; g++) {
+        const gy = py + 4 + rand() * (ph - 8);
+        ctx.strokeStyle = rand() > 0.4 ? 'rgba(56,38,20,0.38)' : 'rgba(154,122,82,0.22)';
+        ctx.lineWidth = 1 + rand() * 2.2;
+        ctx.beginPath();
+        ctx.moveTo(0, gy);
+        ctx.bezierCurveTo(size * 0.33, gy + (rand() - 0.5) * 6, size * 0.66, gy + (rand() - 0.5) * 6, size, gy);
+        ctx.stroke();
+
+        hCtx.strokeStyle = rand() > 0.5 ? '#6e6e6e' : '#9c9c9c';
+        hCtx.lineWidth = 1.5;
+        hCtx.beginPath();
+        hCtx.moveTo(0, gy);
+        hCtx.lineTo(size, gy);
+        hCtx.stroke();
+      }
+    }
+
+    // Deep plank bevel seams
     ctx.strokeStyle = dark;
-    ctx.lineWidth = 8;
+    ctx.lineWidth = 6;
+    hCtx.strokeStyle = '#1e1e1e';
+    hCtx.lineWidth = 8;
     for (let y = 0; y <= size; y += 64) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(size, y);
       ctx.stroke();
+      hCtx.beginPath();
+      hCtx.moveTo(0, y);
+      hCtx.lineTo(size, y);
+      hCtx.stroke();
     }
-    ctx.lineWidth = 26;
-    ctx.strokeRect(13, 13, size - 26, size - 26);
+
+    // Outer structural frame + diagonal brace + recessed inner face
+    ctx.strokeStyle = '#5a4128';
+    ctx.lineWidth = 30;
+    ctx.strokeRect(15, 15, size - 30, size - 30);
+    hCtx.strokeStyle = '#c8c8c8';
+    hCtx.lineWidth = 30;
+    hCtx.strokeRect(15, 15, size - 30, size - 30);
+
+    ctx.strokeStyle = '#4e3721';
+    ctx.lineWidth = 24;
     ctx.beginPath();
-    ctx.moveTo(22, 22);
-    ctx.lineTo(size - 22, size - 22);
+    ctx.moveTo(24, 24);
+    ctx.lineTo(size - 24, size - 24);
     ctx.stroke();
-    return this.register(finalizeTexture(canvas, aniso, true, 1, 1));
+    hCtx.strokeStyle = '#b4b4b4';
+    hCtx.lineWidth = 24;
+    hCtx.beginPath();
+    hCtx.moveTo(24, 24);
+    hCtx.lineTo(size - 24, size - 24);
+    hCtx.stroke();
+
+    // Nail heads along framing
+    for (let n = 36; n < size - 24; n += 64) {
+      for (const [nx, ny] of [[16, n], [size - 16, n], [n, 16], [n, size - 16]]) {
+        ctx.fillStyle = '#26221e';
+        ctx.beginPath();
+        ctx.arc(nx, ny, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        hCtx.fillStyle = '#e5e5e5';
+        hCtx.beginPath();
+        hCtx.arc(nx, ny, 3.5, 0, Math.PI * 2);
+        hCtx.fill();
+      }
+    }
+
+    return {
+      albedo: this.register(finalizeTexture(canvas, aniso, true, 1, 1)),
+      normal: this.register(heightCanvasToNormal(hCanvas, 2.8, aniso, 1, 1)),
+      roughness: this.register(finalizeTexture(hCanvas, aniso, false, 1, 1)),
+    };
   }
 
-  private createMilitaryCrateTexture(size: number, aniso: number) {
+  private createMilitaryCratePBR(size: number, aniso: number) {
     const [canvas, ctx] = makeCanvas(size);
-    ctx.fillStyle = '#384130';
+    const [hCanvas, hCtx] = makeCanvas(size);
+    const rand = seededRand(629);
+
+    ctx.fillStyle = '#3c4533';
     ctx.fillRect(0, 0, size, size);
+    hCtx.fillStyle = '#848484';
+    hCtx.fillRect(0, 0, size, size);
+
+    // Molded polymer/steel reinforcement ribs
+    for (let x = 48; x < size - 48; x += 36) {
+      ctx.fillStyle = 'rgba(22,26,18,0.34)';
+      ctx.fillRect(x, 42, 12, size - 84);
+      hCtx.fillStyle = '#a8a8a8';
+      hCtx.fillRect(x, 42, 12, size - 84);
+    }
+
+    // Heavy rimmed border & corner latches
     ctx.strokeStyle = '#20261b';
-    ctx.lineWidth = 24;
-    ctx.strokeRect(12, 12, size - 24, size - 24);
+    ctx.lineWidth = 28;
+    ctx.strokeRect(14, 14, size - 28, size - 28);
+    hCtx.strokeStyle = '#d2d2d2';
+    hCtx.lineWidth = 28;
+    hCtx.strokeRect(14, 14, size - 28, size - 28);
+
+    // Steel corner brackets
+    ctx.fillStyle = '#2a2e2c';
+    hCtx.fillStyle = '#e0e0e0';
+    for (const [cx, cy] of [[0, 0], [size - 48, 0], [0, size - 48], [size - 48, size - 48]]) {
+      ctx.fillRect(cx, cy, 48, 48);
+      hCtx.fillRect(cx, cy, 48, 48);
+    }
+
+    // Center recessed handle band
     ctx.fillStyle = '#242a20';
     ctx.fillRect(36, size * 0.44, size - 72, 42);
+    hCtx.fillStyle = '#484848';
+    hCtx.fillRect(36, size * 0.44, size - 72, 42);
+
+    // Weathered NATO stencil
     ctx.fillStyle = '#cbb76c';
     ctx.font = 'bold 46px monospace';
     ctx.fillText('NATO 5.56', 108, 134);
@@ -725,7 +854,149 @@ export class TextureLibrary {
     ctx.fillText('LOT 04-WILDLANDS', 112, 392);
     ctx.fillStyle = '#c2a44c';
     ctx.fillRect(64, 332, size - 128, 14);
-    return this.register(finalizeTexture(canvas, aniso, true, 1, 1));
+
+    // Edge wear & dust scratches
+    for (let i = 0; i < 1200; i++) {
+      ctx.fillStyle = rand() > 0.5 ? 'rgba(130,126,102,0.14)' : 'rgba(16,18,14,0.18)';
+      ctx.fillRect(rand() * size, rand() * size, 3 + rand() * 5, 2);
+    }
+
+    return {
+      albedo: this.register(finalizeTexture(canvas, aniso, true, 1, 1)),
+      normal: this.register(heightCanvasToNormal(hCanvas, 2.4, aniso, 1, 1)),
+      roughness: this.register(finalizeTexture(hCanvas, aniso, false, 1, 1)),
+    };
+  }
+
+  private createDesertStuccoPBR(size: number, aniso: number, repeat: number) {
+    const [canvas, ctx] = makeCanvas(size);
+    const [hCanvas, hCtx] = makeCanvas(size);
+    const rand = seededRand(743);
+
+    // Warm sun-baked desert sandstone / military stucco base
+    ctx.fillStyle = '#b49f7f';
+    ctx.fillRect(0, 0, size, size);
+    hCtx.fillStyle = '#808080';
+    hCtx.fillRect(0, 0, size, size);
+
+    // Plaster blotches & humidity stains
+    for (let i = 0; i < 120; i++) {
+      const x = rand() * size;
+      const y = rand() * size;
+      const r = 16 + rand() * 56;
+      ctx.fillStyle = rand() > 0.5 ? 'rgba(148,125,92,0.18)' : 'rgba(202,184,152,0.14)';
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      hCtx.fillStyle = rand() > 0.5 ? 'rgba(155,155,155,0.2)' : 'rgba(105,105,105,0.2)';
+      hCtx.beginPath();
+      hCtx.arc(x, y, r, 0, Math.PI * 2);
+      hCtx.fill();
+    }
+
+    // Exposed weathered brick patches where plaster peeled off
+    for (let p = 0; p < 5; p++) {
+      const px = 40 + rand() * (size - 120);
+      const py = 40 + rand() * (size - 120);
+      const pw = 48 + rand() * 56;
+      const ph = 32 + rand() * 40;
+      ctx.fillStyle = '#6c5340';
+      ctx.fillRect(px, py, pw, ph);
+      hCtx.fillStyle = '#383838';
+      hCtx.fillRect(px, py, pw, ph);
+      for (let by = py + 3; by < py + ph - 6; by += 12) {
+        for (let bx = px + 3; bx < px + pw - 10; bx += 22) {
+          ctx.fillStyle = rand() > 0.5 ? '#8f6249' : '#7b523c';
+          ctx.fillRect(bx, by, 18, 9);
+          hCtx.fillStyle = '#686868';
+          hCtx.fillRect(bx, by, 18, 9);
+        }
+      }
+    }
+
+    // Fine sand-plaster grain
+    for (let i = 0; i < 6500; i++) {
+      const gx = rand() * size;
+      const gy = rand() * size;
+      ctx.fillStyle = rand() > 0.5 ? 'rgba(225,212,188,0.14)' : 'rgba(84,70,52,0.14)';
+      ctx.fillRect(gx, gy, 2, 2);
+      hCtx.fillStyle = rand() > 0.5 ? '#9a9a9a' : '#646464';
+      hCtx.fillRect(gx, gy, 2, 2);
+    }
+
+    return {
+      albedo: this.register(finalizeTexture(canvas, aniso, true, repeat, repeat)),
+      normal: this.register(heightCanvasToNormal(hCanvas, 2.3, aniso, repeat, repeat)),
+      roughness: this.register(finalizeTexture(hCanvas, aniso, false, repeat, repeat)),
+    };
+  }
+
+  private createMetalPanelPBR(size: number, base: string, aniso: number, repeat: number) {
+    const [canvas, ctx] = makeCanvas(size);
+    const [hCanvas, hCtx] = makeCanvas(size);
+    const rand = seededRand(823);
+
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, size, size);
+    hCtx.fillStyle = '#808080';
+    hCtx.fillRect(0, 0, size, size);
+
+    // Steel plate seams (2x2 grid)
+    ctx.strokeStyle = 'rgba(18,22,24,0.65)';
+    ctx.lineWidth = 4;
+    hCtx.strokeStyle = '#262626';
+    hCtx.lineWidth = 5;
+    for (const pos of [0, size / 2]) {
+      ctx.beginPath();
+      ctx.moveTo(pos, 0);
+      ctx.lineTo(pos, size);
+      ctx.moveTo(0, pos);
+      ctx.lineTo(size, pos);
+      ctx.stroke();
+
+      hCtx.beginPath();
+      hCtx.moveTo(pos, 0);
+      hCtx.lineTo(pos, size);
+      hCtx.moveTo(0, pos);
+      hCtx.lineTo(size, pos);
+      hCtx.stroke();
+    }
+
+    // Edge highlight & chipped paint wear
+    ctx.strokeStyle = 'rgba(185,195,200,0.22)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(4, 4, size / 2 - 8, size / 2 - 8);
+    ctx.strokeRect(size / 2 + 4, 4, size / 2 - 8, size / 2 - 8);
+    ctx.strokeRect(4, size / 2 + 4, size / 2 - 8, size / 2 - 8);
+    ctx.strokeRect(size / 2 + 4, size / 2 + 4, size / 2 - 8, size / 2 - 8);
+
+    // Rivets along panel borders
+    for (let p = 18; p < size; p += 32) {
+      for (const [rx, ry] of [[p, 12], [p, size / 2 + 12], [12, p], [size / 2 + 12, p]]) {
+        ctx.fillStyle = '#6e787c';
+        ctx.beginPath();
+        ctx.arc(rx, ry, 3, 0, Math.PI * 2);
+        ctx.fill();
+        hCtx.fillStyle = '#dadada';
+        hCtx.beginPath();
+        hCtx.arc(rx, ry, 3.2, 0, Math.PI * 2);
+        hCtx.fill();
+      }
+    }
+
+    // Oil drips & surface scratches
+    for (let i = 0; i < 65; i++) {
+      const sx = rand() * size;
+      const sy = rand() * size;
+      ctx.fillStyle = rand() > 0.5 ? 'rgba(155,165,170,0.16)' : 'rgba(28,30,32,0.22)';
+      ctx.fillRect(sx, sy, 4 + rand() * 18, 2);
+    }
+
+    return {
+      albedo: this.register(finalizeTexture(canvas, aniso, true, repeat, repeat)),
+      normal: this.register(heightCanvasToNormal(hCanvas, 2.2, aniso, repeat, repeat)),
+      roughness: this.register(finalizeTexture(hCanvas, aniso, false, repeat, repeat)),
+    };
   }
 
   private createBrickPBR(size: number, aniso: number, repeat: number) {

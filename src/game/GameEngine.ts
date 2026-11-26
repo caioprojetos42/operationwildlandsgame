@@ -1595,6 +1595,9 @@ export class GameEngine {
       for (const ev of aiRes.fireEvents) {
         this.weapons.spawnEnemyTracer(ev.origin, ev.target);
         this.suppressionLevel = Math.min(1, this.suppressionLevel + ev.suppression);
+        if (!ev.hitPlayer && ev.suppression > 0.08) {
+          this.audio.playBulletWhiz(ev.target);
+        }
         if (ev.hitPlayer) {
           if (this.vehicles.activeVehicle) {
             this.vehicles.damageVehicle(this.vehicles.activeVehicle.id, ev.damage * 0.5);

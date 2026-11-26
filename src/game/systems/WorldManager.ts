@@ -1175,6 +1175,10 @@ export class WorldManager {
       this.spawnExplosiveBarrel(`bar_${key}_2`, 64, 0, -24, key);
       this.buildLightPole(group, 34, -68);
       this.buildLightPole(group, 14, -46);
+      this.buildJerseyBarrier(group, -6, 0, -14, 0.12, key, colliders);
+      this.buildJerseyBarrier(group, 6, 0, -16, -0.18, key, colliders);
+      this.buildJerseyBarrier(group, 18, 0, -10, 0.35, key, colliders);
+      this.buildBlastWallLine(group, -12, -105, 42, -105, key, colliders);
     }
     if (sx === 0 && sz === 0) {
       this.buildRailYard(group, 48, 65, key, colliders);
@@ -1185,6 +1189,10 @@ export class WorldManager {
       this.spawnExplosiveBarrel(`bar_${key}_1`, 38, 0, 52, key);
       this.buildCheckpointGate(group, 0, 48);
       this.buildLightPole(group, 26, 24);
+      this.buildJerseyBarrier(group, -8, 0, 14, -0.22, key, colliders);
+      this.buildJerseyBarrier(group, 8, 0, 12, 0.2, key, colliders);
+      this.buildJerseyBarrier(group, -10, 0, 38, 0.08, key, colliders);
+      this.buildJerseyBarrier(group, 10, 0, 38, -0.08, key, colliders);
     }
     if (sx === -1 && sz === 0) {
       this.buildWarehouse(group, -52, 46, key, colliders);
@@ -1193,6 +1201,8 @@ export class WorldManager {
       this.buildWatchtower(group, -82, 112, key, colliders);
       this.buildPerimeterFence(group, -118, 48, 52, Math.PI / 2);
       this.buildLightPole(group, -32, 34);
+      this.buildJerseyBarrier(group, -16, 0, 12, Math.PI * 0.48, key, colliders);
+      this.buildJerseyBarrier(group, -16, 0, 26, Math.PI * 0.52, key, colliders);
     }
 
     // Outer region procedural landmarks (keep handcrafted Desert Outpost master compound clear!)
@@ -1435,91 +1445,269 @@ export class WorldManager {
     }
   }
 
+  private buildJerseyBarrier(
+    group: THREE.Group,
+    x: number,
+    y: number,
+    z: number,
+    rotY: number,
+    key: string,
+    colliders: ColliderBox[]
+  ) {
+    const g = new THREE.Group();
+    g.position.set(x, y, z);
+    g.rotation.y = rotY;
+
+    const base = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.34, 0.72), this.mats.concreteDark);
+    base.position.y = 0.17;
+    base.castShadow = true;
+    base.receiveShadow = true;
+    const mid = new THREE.Mesh(new THREE.BoxGeometry(3.18, 0.42, 0.48), this.mats.concrete);
+    mid.position.y = 0.54;
+    mid.castShadow = true;
+    mid.receiveShadow = true;
+    const top = new THREE.Mesh(new THREE.BoxGeometry(3.16, 0.36, 0.28), this.mats.hazardConcrete);
+    top.position.y = 0.92;
+    top.castShadow = true;
+    top.receiveShadow = true;
+
+    g.add(base, mid, top);
+    group.add(g);
+
+    const isRotated = Math.abs(Math.sin(rotY)) > 0.7;
+    this.addStaticCollider(
+      x,
+      y + 0.55,
+      z,
+      isRotated ? 0.75 : 3.2,
+      1.1,
+      isRotated ? 3.2 : 0.75,
+      'concrete',
+      key,
+      colliders
+    );
+  }
+
+  private buildDetailedWindowBay(
+    parent: THREE.Group,
+    x: number,
+    y: number,
+    z: number,
+    w: number,
+    h: number,
+    rotY = 0
+  ) {
+    const bay = new THREE.Group();
+    bay.position.set(x, y, z);
+    bay.rotation.y = rotY;
+
+    // Outer recessed steel frame
+    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(w + 0.18, 0.12, 0.26), this.mats.bunkerSteel);
+    frameTop.position.set(0, h * 0.5 + 0.04, 0);
+    const sill = new THREE.Mesh(new THREE.BoxGeometry(w + 0.28, 0.14, 0.36), this.mats.concreteDark);
+    sill.position.set(0, -h * 0.5 - 0.05, 0.05);
+    const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.11, h, 0.24), this.mats.bunkerSteel);
+    frameL.position.set(-w * 0.5, 0, 0);
+    const frameR = new THREE.Mesh(new THREE.BoxGeometry(0.11, h, 0.24), this.mats.bunkerSteel);
+    frameR.position.set(w * 0.5, 0, 0);
+    const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.07, h, 0.2), this.mats.bunkerSteel);
+    mullion.position.set(0, 0, 0.02);
+
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.12, h - 0.08, 0.08), this.mats.glassTinted);
+    glass.position.set(0, 0, -0.02);
+
+    bay.add(frameTop, sill, frameL, frameR, mullion, glass);
+    parent.add(bay);
+  }
+
+  private buildRooftopHVAC(parent: THREE.Group, x: number, y: number, z: number) {
+    const hvac = new THREE.Group();
+    hvac.position.set(x, y, z);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.3, 2.0), this.mats.metalPanel);
+    body.position.y = 0.65;
+    body.castShadow = true;
+    body.receiveShadow = true;
+    const shroud = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.72, 0.24, 12), this.mats.bunkerSteel);
+    shroud.position.set(-0.4, 1.42, 0);
+    const louver = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.85, 0.08), this.mats.rustedMetal);
+    louver.position.set(0.5, 0.65, 1.02);
+    const duct = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 1.8), this.mats.corrugatedMetal);
+    duct.position.set(1.55, 0.35, 0);
+    hvac.add(body, shroud, louver, duct);
+    parent.add(hvac);
+  }
+
+  private buildSteppedStaircase(
+    parent: THREE.Group,
+    x: number,
+    y: number,
+    z: number,
+    height: number,
+    run: number,
+    width: number
+  ) {
+    const stairs = new THREE.Group();
+    stairs.position.set(x, y, z);
+    const steps = Math.max(8, Math.round(height / 0.38));
+    const stepH = height / steps;
+    const stepD = run / steps;
+
+    for (let i = 0; i < steps; i++) {
+      const tread = new THREE.Mesh(new THREE.BoxGeometry(width, 0.09, stepD + 0.06), this.mats.bunkerSteel);
+      tread.position.set(0, (i + 0.5) * stepH, -run * 0.5 + (i + 0.5) * stepD);
+      tread.castShadow = true;
+      stairs.add(tread);
+    }
+
+    const diag = Math.hypot(height, run);
+    const angle = Math.atan2(height, run);
+    for (const sx of [-width * 0.5 - 0.04, width * 0.5 + 0.04]) {
+      const stringer = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, diag), this.mats.rustedMetal);
+      stringer.position.set(sx, height * 0.5, 0);
+      stringer.rotation.x = -angle;
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, diag), this.mats.bunkerSteel);
+      rail.position.set(sx, height * 0.5 + 0.95, 0);
+      rail.rotation.x = -angle;
+      const postBot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.98, 0.06), this.mats.bunkerSteel);
+      postBot.position.set(sx, 0.49, -run * 0.5);
+      const postTop = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.98, 0.06), this.mats.bunkerSteel);
+      postTop.position.set(sx, height + 0.49, run * 0.5);
+      stairs.add(stringer, rail, postBot, postTop);
+    }
+    parent.add(stairs);
+  }
+
   private buildWarehouse(group: THREE.Group, x: number, z: number, key: string, colliders: ColliderBox[]) {
     const y = this.terrain.getSurfaceHeightAt(x, z);
     const w = 16;
-    const h = 7.2;
+    const h = 7.4;
     const d = 20;
     const g = new THREE.Group();
     g.position.set(x, y, z);
 
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(w, 0.3, d), this.mats.concrete);
-    floor.position.y = 0.15;
+    // Stepped reinforced concrete apron & foundation plinth
+    const apron = new THREE.Mesh(new THREE.BoxGeometry(w + 2.4, 0.24, d + 2.8), this.mats.concreteDark);
+    apron.position.y = 0.12;
+    apron.receiveShadow = true;
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(w, 0.34, d), this.mats.concrete);
+    floor.position.y = 0.17;
     floor.receiveShadow = true;
-    g.add(floor);
+    g.add(apron, floor);
 
-    const back = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.7), this.desertConcreteMat);
-    back.position.set(0, h / 2, -d / 2);
-    back.castShadow = true;
-    back.receiveShadow = true;
-    const left = new THREE.Mesh(new THREE.BoxGeometry(0.7, h, d), this.desertConcreteMat);
-    left.position.set(-w / 2, h / 2, 0);
-    left.castShadow = true;
-    left.receiveShadow = true;
-    const right = new THREE.Mesh(new THREE.BoxGeometry(0.7, h, d), this.desertConcreteMat);
-    right.position.set(w / 2, h / 2, 0);
-    right.castShadow = true;
-    right.receiveShadow = true;
+    // Lower concrete dado wall (2.8m) + upper corrugated steel cladding
+    const dadoH = 2.8;
+    const upperH = h - dadoH;
+    const backDado = new THREE.Mesh(new THREE.BoxGeometry(w, dadoH, 0.72), this.desertConcreteMat);
+    backDado.position.set(0, dadoH / 2, -d / 2);
+    backDado.castShadow = true;
+    backDado.receiveShadow = true;
+    const backUpper = new THREE.Mesh(new THREE.BoxGeometry(w - 0.1, upperH, 0.58), this.mats.corrugatedMetal);
+    backUpper.position.set(0, dadoH + upperH / 2, -d / 2);
+    backUpper.castShadow = true;
 
-    const frontL = new THREE.Mesh(new THREE.BoxGeometry(5.5, h, 0.7), this.desertConcreteMat);
+    const leftDado = new THREE.Mesh(new THREE.BoxGeometry(0.72, dadoH, d), this.desertConcreteMat);
+    leftDado.position.set(-w / 2, dadoH / 2, 0);
+    leftDado.castShadow = true;
+    leftDado.receiveShadow = true;
+    const leftUpper = new THREE.Mesh(new THREE.BoxGeometry(0.58, upperH, d - 0.1), this.mats.corrugatedMetal);
+    leftUpper.position.set(-w / 2, dadoH + upperH / 2, 0);
+    leftUpper.castShadow = true;
+
+    const rightDado = new THREE.Mesh(new THREE.BoxGeometry(0.72, dadoH, d), this.desertConcreteMat);
+    rightDado.position.set(w / 2, dadoH / 2, 0);
+    rightDado.castShadow = true;
+    rightDado.receiveShadow = true;
+    const rightUpper = new THREE.Mesh(new THREE.BoxGeometry(0.58, upperH, d - 0.1), this.mats.corrugatedMetal);
+    rightUpper.position.set(w / 2, dadoH + upperH / 2, 0);
+    rightUpper.castShadow = true;
+
+    const frontL = new THREE.Mesh(new THREE.BoxGeometry(5.5, h, 0.72), this.desertConcreteMat);
     frontL.position.set(-5.25, h / 2, d / 2);
     frontL.castShadow = true;
     frontL.receiveShadow = true;
-    const frontR = new THREE.Mesh(new THREE.BoxGeometry(5.5, h, 0.7), this.desertConcreteMat);
+    const frontR = new THREE.Mesh(new THREE.BoxGeometry(5.5, h, 0.72), this.desertConcreteMat);
     frontR.position.set(5.25, h / 2, d / 2);
     frontR.castShadow = true;
     frontR.receiveShadow = true;
-    const lintel = new THREE.Mesh(new THREE.BoxGeometry(5.5, 2.4, 0.75), this.mats.hazardConcrete);
-    lintel.position.set(0, h - 1.2, d / 2);
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(5.6, 2.5, 0.8), this.mats.hazardConcrete);
+    lintel.position.set(0, h - 1.25, d / 2);
 
-    const canopy = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.22, 1.8), this.mats.bunkerSteel);
-    canopy.position.set(0, h - 2.3, d / 2 + 0.9);
-    const doorLamp = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.16, 0.24), this.lampWarmMat);
-    doorLamp.position.set(0, h - 2.45, d / 2 + 0.65);
+    // Cargo bay overhead door partially rolled up + steel guide tracks
+    const rollDoor = new THREE.Mesh(new THREE.BoxGeometry(4.9, 1.35, 0.18), this.mats.metalPanel);
+    rollDoor.position.set(0, h - 3.0, d / 2 + 0.08);
+    for (const tx of [-2.55, 2.55]) {
+      const track = new THREE.Mesh(new THREE.BoxGeometry(0.2, h - 2.2, 0.25), this.mats.bunkerSteel);
+      track.position.set(tx, (h - 2.2) * 0.5, d / 2 + 0.15);
+      const bollard = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 1.15, 8), this.mats.hazardConcrete);
+      bollard.position.set(tx * 1.18, 0.58, d / 2 + 1.1);
+      g.add(track, bollard);
+    }
+
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.22, 2.1), this.mats.bunkerSteel);
+    canopy.position.set(0, h - 2.25, d / 2 + 1.05);
+    canopy.castShadow = true;
+    const doorLamp = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.16, 0.26), this.lampWarmMat);
+    doorLamp.position.set(0, h - 2.4, d / 2 + 0.75);
 
     for (const sx of [-w / 2, w / 2]) {
       for (const sz of [-d / 2, d / 2]) {
-        const pilaster = new THREE.Mesh(new THREE.BoxGeometry(1.05, h + 0.4, 1.05), this.mats.concreteDark);
-        pilaster.position.set(sx, h / 2, sz);
+        const pilaster = new THREE.Mesh(new THREE.BoxGeometry(1.15, h + 0.6, 1.15), this.mats.concreteDark);
+        pilaster.position.set(sx, (h + 0.2) / 2, sz);
         pilaster.castShadow = true;
         g.add(pilaster);
       }
     }
 
+    // Individual clerestory window bays on left/right walls
     for (const side of [-1, 1]) {
       for (let wz = -6; wz <= 6; wz += 6) {
-        const frame = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.45, 3.2), this.mats.bunkerSteel);
-        frame.position.set(side * (w / 2), 4.6, wz);
-        const glass = new THREE.Mesh(new THREE.BoxGeometry(0.92, 1.15, 2.85), this.mats.glassTinted);
-        glass.position.set(side * (w / 2), 4.6, wz);
-        g.add(frame, glass);
+        this.buildDetailedWindowBay(g, side * (w / 2 + 0.22), 5.0, wz, 3.0, 1.3, Math.PI * 0.5);
       }
     }
 
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 1.0, 0.6, d + 1.0), this.mats.corrugatedMetal);
-    roof.position.set(0, h + 0.3, 0);
-    roof.castShadow = true;
-    roof.receiveShadow = true;
+    // Hollow 4-sided parapet + metal roof deck + HVAC & vents
+    const roofDeck = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.35, d + 0.4), this.mats.concreteDark);
+    roofDeck.position.set(0, h + 0.18, 0);
+    roofDeck.castShadow = true;
+    roofDeck.receiveShadow = true;
+    for (const pz of [-d / 2 - 0.15, d / 2 + 0.15]) {
+      const pWall = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.75, 0.35), this.mats.concrete);
+      pWall.position.set(0, h + 0.58, pz);
+      g.add(pWall);
+    }
+    for (const px of [-w / 2 - 0.15, w / 2 + 0.15]) {
+      const pWall = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.75, d + 0.6), this.mats.concrete);
+      pWall.position.set(px, h + 0.58, 0);
+      g.add(pWall);
+    }
 
-    const hvac1 = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.35, 2.2), this.mats.bunkerSteel);
-    hvac1.position.set(-3.2, h + 1.25, -3.5);
-    hvac1.castShadow = true;
-    const hvacFan = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.25, 10), this.mats.rustedMetal);
-    hvacFan.position.set(-3.2, h + 2.0, -3.5);
-    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 2.8, 8), this.mats.rustedMetal);
-    pipe.position.set(4.5, h + 1.8, -6.2);
+    this.buildRooftopHVAC(g, -3.2, h + 0.35, -3.5);
+    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 2.8, 10), this.mats.rustedMetal);
+    pipe.position.set(4.5, h + 1.65, -6.2);
 
-    const stairRun = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.24, 9.2), this.mats.bunkerSteel);
-    stairRun.position.set(w / 2 + 0.95, h * 0.48, -1.5);
-    stairRun.rotation.x = 0.62;
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 9.2), this.mats.bunkerSteel);
-    rail.position.set(w / 2 + 1.45, h * 0.48 + 0.95, -1.5);
-    rail.rotation.x = 0.62;
+    // Real stepped exterior steel staircase to roof
+    this.buildSteppedStaircase(g, w / 2 + 1.0, 0.2, -1.5, h + 0.15, 7.6, 1.15);
 
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1.3), this.mats.militarySign);
-    sign.position.set(5.2, 3.6, d / 2 + 0.38);
+    sign.position.set(5.2, 3.8, d / 2 + 0.4);
 
-    g.add(back, left, right, frontL, frontR, lintel, canopy, doorLamp, roof, hvac1, hvacFan, pipe, stairRun, rail, sign);
+    g.add(
+      backDado,
+      backUpper,
+      leftDado,
+      leftUpper,
+      rightDado,
+      rightUpper,
+      frontL,
+      frontR,
+      lintel,
+      rollDoor,
+      canopy,
+      doorLamp,
+      roofDeck,
+      pipe,
+      sign
+    );
     group.add(g);
 
     this.addStaticCollider(x, y + h / 2, z - d / 2, w, h, 1.0, 'concrete', key, colliders);
@@ -1534,67 +1722,118 @@ export class WorldManager {
     const g = new THREE.Group();
     g.position.set(x, y, z);
 
-    const basePodium = new THREE.Mesh(new THREE.BoxGeometry(22.6, 2.2, 16.6), this.mats.hazardConcrete);
-    basePodium.position.y = 1.1;
+    // Stepped concrete courtyard plinth + armored lower base
+    const apron = new THREE.Mesh(new THREE.BoxGeometry(25.6, 0.26, 19.6), this.mats.concrete);
+    apron.position.y = 0.13;
+    apron.receiveShadow = true;
+    const basePodium = new THREE.Mesh(new THREE.BoxGeometry(22.8, 2.3, 16.8), this.mats.hazardConcrete);
+    basePodium.position.y = 1.15;
     basePodium.castShadow = true;
     basePodium.receiveShadow = true;
-    g.add(basePodium);
+    g.add(apron, basePodium);
 
-    const main = new THREE.Mesh(new THREE.BoxGeometry(22, 11, 16), this.mats.concreteDark);
-    main.position.y = 5.5;
+    // Main reinforced concrete structure with horizontal floor belt courses
+    const main = new THREE.Mesh(new THREE.BoxGeometry(22, 11.2, 16), this.mats.concreteDark);
+    main.position.y = 5.6;
     main.castShadow = true;
     main.receiveShadow = true;
     g.add(main);
 
-    for (let fx = -9; fx <= 9; fx += 4.5) {
-      const finF = new THREE.Mesh(new THREE.BoxGeometry(0.65, 11.2, 0.55), this.desertConcreteMat);
-      finF.position.set(fx, 5.6, 8.15);
+    const belt1 = new THREE.Mesh(new THREE.BoxGeometry(22.5, 0.42, 16.5), this.desertConcreteMat);
+    belt1.position.y = 3.2;
+    const belt2 = new THREE.Mesh(new THREE.BoxGeometry(22.5, 0.42, 16.5), this.desertConcreteMat);
+    belt2.position.y = 7.0;
+    g.add(belt1, belt2);
+
+    // Architectural concrete pilasters & corner piers
+    for (let fx = -10.6; fx <= 10.6; fx += 5.3) {
+      const finF = new THREE.Mesh(new THREE.BoxGeometry(0.75, 11.4, 0.65), this.desertConcreteMat);
+      finF.position.set(fx, 5.7, 8.15);
+      finF.castShadow = true;
       const finB = finF.clone();
       finB.position.z = -8.15;
       g.add(finF, finB);
     }
 
-    for (const wy of [4.6, 8.4]) {
-      const win = new THREE.Mesh(new THREE.BoxGeometry(19.5, 2.0, 16.24), this.mats.glassTinted);
-      win.position.y = wy;
-      const sill = new THREE.Mesh(new THREE.BoxGeometry(22.4, 0.28, 16.45), this.mats.bunkerSteel);
-      sill.position.y = wy - 1.08;
-      g.add(win, sill);
+    // Individual recessed window bays (Front, Back & Sides)
+    for (const wy of [5.1, 9.0]) {
+      for (const wx of [-7.9, -2.65, 2.65, 7.9]) {
+        this.buildDetailedWindowBay(g, wx, wy, 8.05, 3.4, 1.85, 0);
+        this.buildDetailedWindowBay(g, wx, wy, -8.05, 3.4, 1.85, Math.PI);
+      }
+      for (const wz of [-4.2, 4.2]) {
+        this.buildDetailedWindowBay(g, -11.05, wy, wz, 3.4, 1.85, -Math.PI * 0.5);
+        this.buildDetailedWindowBay(g, 11.05, wy, wz, 3.4, 1.85, Math.PI * 0.5);
+      }
     }
 
-    const door = new THREE.Mesh(new THREE.BoxGeometry(4.2, 3.2, 0.35), this.mats.bunkerSteel);
-    door.position.set(0, 1.6, 8.12);
-    const porch = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.32, 2.2), this.mats.concreteDark);
-    porch.position.set(0, 3.4, 9.0);
-    const porchLamp = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.14, 0.28), this.lampCoolMat);
-    porchLamp.position.set(0, 3.2, 9.2);
-    const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.0, 1.7), this.mats.militarySign);
-    sign.position.set(0, 6.45, 8.22);
-    g.add(door, porch, porchLamp, sign);
+    // Double armored blast entrance vestibule + overhead canopy + struts
+    const vestibule = new THREE.Mesh(new THREE.BoxGeometry(5.8, 3.8, 1.4), this.mats.concreteDark);
+    vestibule.position.set(0, 1.9, 8.4);
+    vestibule.castShadow = true;
+    const doorL = new THREE.Mesh(new THREE.BoxGeometry(1.9, 3.1, 0.25), this.mats.metalPanel);
+    doorL.position.set(-1.0, 1.55, 9.12);
+    const doorR = new THREE.Mesh(new THREE.BoxGeometry(1.9, 3.1, 0.25), this.mats.metalPanel);
+    doorR.position.set(1.0, 1.55, 9.12);
+    const pushBarL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 0.14), this.mats.bunkerSteel);
+    pushBarL.position.set(-1.0, 1.4, 9.28);
+    const pushBarR = pushBarL.clone();
+    pushBarR.position.x = 1.0;
 
-    const parapet = new THREE.Mesh(new THREE.BoxGeometry(22.5, 0.9, 16.5), this.desertConcreteMat);
-    parapet.position.y = 11.45;
-    g.add(parapet);
+    const porch = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.34, 2.8), this.mats.bunkerSteel);
+    porch.position.set(0, 3.7, 9.5);
+    porch.castShadow = true;
+    const porchLamp = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.14, 0.28), this.lampCoolMat);
+    porchLamp.position.set(0, 3.5, 9.8);
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.75), this.mats.militarySign);
+    sign.position.set(0, 6.2, 8.26);
+    g.add(vestibule, doorL, doorR, pushBarL, pushBarR, porch, porchLamp, sign);
 
-    const roofPad = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.4, 0.2, 16), this.mats.asphalt);
-    roofPad.position.set(-4.5, 11.12, 0);
+    // Hollow 4-sided parapet walls + coping caps
+    for (const pz of [-8.0, 8.0]) {
+      const pWall = new THREE.Mesh(new THREE.BoxGeometry(22.6, 1.15, 0.48), this.desertConcreteMat);
+      pWall.position.set(0, 11.75, pz);
+      g.add(pWall);
+    }
+    for (const px of [-11.0, 11.0]) {
+      const pWall = new THREE.Mesh(new THREE.BoxGeometry(0.48, 1.15, 16.5), this.desertConcreteMat);
+      pWall.position.set(px, 11.75, 0);
+      g.add(pWall);
+    }
+
+    // Rooftop helipad, penthouse comms bunker, dual HVAC units & lattice antenna mast
+    const roofPad = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 4.4, 0.18, 20), this.mats.asphalt);
+    roofPad.position.set(-4.8, 11.28, 0);
     g.add(roofPad);
 
-    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.38, 9.5, 8), this.mats.bunkerSteel);
-    mast.position.set(6.5, 15.6, -3);
+    const penthouse = new THREE.Mesh(new THREE.BoxGeometry(5.4, 2.8, 4.8), this.mats.metalPanel);
+    penthouse.position.set(5.5, 12.6, -2.8);
+    penthouse.castShadow = true;
+    const pentDoor = new THREE.Mesh(new THREE.BoxGeometry(1.3, 2.2, 0.18), this.mats.bunkerSteel);
+    pentDoor.position.set(5.5, 12.3, -0.35);
+    g.add(penthouse, pentDoor);
+
+    this.buildRooftopHVAC(g, 3.6, 11.2, 4.2);
+    this.buildRooftopHVAC(g, 7.2, 11.2, 4.2);
+
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.42, 9.8, 8), this.mats.bunkerSteel);
+    mast.position.set(6.5, 18.8, -3);
     mast.castShadow = true;
-    const crossAnt = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.12, 0.12), this.mats.bunkerSteel);
-    crossAnt.position.set(6.5, 17.8, -3);
+    const crossAnt = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.14, 0.14), this.mats.bunkerSteel);
+    crossAnt.position.set(6.5, 21.2, -3);
     const dish = new THREE.Mesh(new THREE.ConeGeometry(2.3, 1.2, 14, 1, true), this.mats.corrugatedMetal);
-    dish.position.set(6.5, 19.0, -3);
+    dish.position.set(6.5, 22.4, -3);
     dish.rotation.x = 0.8;
     const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), this.beaconRedMat);
-    beacon.position.set(6.5, 20.6, -3);
+    beacon.position.set(6.5, 24.0, -3);
     this.beaconMeshes.push(beacon);
     g.add(mast, crossAnt, dish, beacon);
 
     group.add(g);
-    this.addStaticCollider(x, y + 5.5, z, 22, 11, 16, 'concrete', key, colliders);
+    this.addStaticCollider(x, y + 5.6, z, 22, 11.2, 16, 'concrete', key, colliders);
+    // Flanking Jersey barriers at HQ entrance
+    this.buildJerseyBarrier(group, x - 5.2, y, z + 11.2, 0.15, key, colliders);
+    this.buildJerseyBarrier(group, x + 5.2, y, z + 11.2, -0.15, key, colliders);
   }
 
   private buildWatchtower(group: THREE.Group, x: number, z: number, key: string, colliders: ColliderBox[]) {
@@ -1824,44 +2063,85 @@ export class WorldManager {
     const g = new THREE.Group();
     g.position.set(x, y, z);
 
-    const groundBase = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, 3.6, d + 0.3), this.mats.concreteDark);
+    // Concrete sidewalk plinth & ground-floor commercial/bunker base
+    const sidewalk = new THREE.Mesh(new THREE.BoxGeometry(w + 2.2, 0.22, d + 2.2), this.mats.concrete);
+    sidewalk.position.y = 0.11;
+    sidewalk.receiveShadow = true;
+    const groundBase = new THREE.Mesh(new THREE.BoxGeometry(w + 0.35, 3.6, d + 0.35), this.mats.concreteDark);
     groundBase.position.y = 1.8;
     groundBase.castShadow = true;
     groundBase.receiveShadow = true;
-    g.add(groundBase);
+    g.add(sidewalk, groundBase);
 
+    // Upper weathered brick structure + corner concrete pilasters
     const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), this.mats.brickUrban);
     body.position.y = h / 2;
     body.castShadow = true;
     body.receiveShadow = true;
     g.add(body);
 
+    for (const cx of [-w / 2, w / 2]) {
+      for (const cz of [-d / 2, d / 2]) {
+        const pil = new THREE.Mesh(new THREE.BoxGeometry(0.75, h + 0.2, 0.75), this.desertConcreteMat);
+        pil.position.set(cx, h / 2, cz);
+        pil.castShadow = true;
+        g.add(pil);
+      }
+    }
+
+    // Ground floor steel entrance door + awning
+    const door = new THREE.Mesh(new THREE.BoxGeometry(2.1, 2.7, 0.25), this.mats.metalPanel);
+    door.position.set(0, 1.45, d / 2 + 0.2);
+    const awning = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.18, 1.4), this.mats.bunkerSteel);
+    awning.position.set(0, 3.05, d / 2 + 0.75);
+    g.add(door, awning);
+
     for (let f = 0; f < floors; f++) {
       const fy = 2.4 + f * 4.2;
-      const win = new THREE.Mesh(new THREE.BoxGeometry(w + 0.14, 1.4, d - 2.8), this.mats.glassTinted);
-      win.position.y = fy;
-      const winSide = new THREE.Mesh(new THREE.BoxGeometry(w - 2.8, 1.4, d + 0.14), this.mats.glassTinted);
-      winSide.position.y = fy;
-      const ledge = new THREE.Mesh(new THREE.BoxGeometry(w + 0.45, 0.26, d + 0.45), this.desertConcreteMat);
-      ledge.position.y = fy - 0.85;
-      g.add(win, winSide, ledge);
+      const belt = new THREE.Mesh(new THREE.BoxGeometry(w + 0.45, 0.26, d + 0.45), this.desertConcreteMat);
+      belt.position.y = fy - 1.15;
+      g.add(belt);
+
+      // Individual recessed window bays on all 4 facades
+      for (const wx of [-4.1, 0, 4.1]) {
+        if (f === 0 && wx === 0) continue; // front entrance door
+        this.buildDetailedWindowBay(g, wx, fy, d / 2 + 0.08, 2.2, 1.5, 0);
+        this.buildDetailedWindowBay(g, wx, fy, -d / 2 - 0.08, 2.2, 1.5, Math.PI);
+      }
+      for (const wz of [-4.1, 4.1]) {
+        this.buildDetailedWindowBay(g, -w / 2 - 0.08, fy, wz, 2.2, 1.5, -Math.PI * 0.5);
+        this.buildDetailedWindowBay(g, w / 2 + 0.08, fy, wz, 2.2, 1.5, Math.PI * 0.5);
+      }
 
       if (f > 0) {
         const balc = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.22, 1.35), this.mats.concreteDark);
         balc.position.set(0, fy - 0.85, d / 2 + 0.65);
+        balc.castShadow = true;
         const balcRail = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.9, 0.12), this.mats.bunkerSteel);
         balcRail.position.set(0, fy - 0.32, d / 2 + 1.26);
-        g.add(balc, balcRail);
+        const acUnit = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.65, 0.42), this.mats.metalPanel);
+        acUnit.position.set(4.8, fy - 0.5, d / 2 + 0.25);
+        g.add(balc, balcRail, acUnit);
       }
     }
 
-    const parapet = new THREE.Mesh(new THREE.BoxGeometry(w + 0.65, 1.0, d + 0.65), this.mats.concreteDark);
-    parapet.position.y = h + 0.5;
-    const roofAc = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.3, 1.8), this.mats.bunkerSteel);
-    roofAc.position.set(-3.2, h + 1.15, -2.5);
+    // Hollow 4-sided parapet walls + rooftop HVAC + water tank + antenna
+    for (const pz of [-d / 2 - 0.15, d / 2 + 0.15]) {
+      const pWall = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.95, 0.36), this.mats.concreteDark);
+      pWall.position.set(0, h + 0.48, pz);
+      g.add(pWall);
+    }
+    for (const px of [-w / 2 - 0.15, w / 2 + 0.15]) {
+      const pWall = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.95, d + 0.6), this.mats.concreteDark);
+      pWall.position.set(px, h + 0.48, 0);
+      g.add(pWall);
+    }
+    this.buildRooftopHVAC(g, -3.2, h, -2.5);
+    const tank = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 1.8, 12), this.mats.rustedMetal);
+    tank.position.set(3.2, h + 1.4, -3.0);
     const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 4.5, 6), this.mats.bunkerSteel);
     antenna.position.set(3.8, h + 2.8, 3.2);
-    g.add(parapet, roofAc, antenna);
+    g.add(tank, antenna);
 
     group.add(g);
     this.addStaticCollider(x, y + h / 2, z, w, h, d, 'concrete', key, colliders);
@@ -1903,30 +2183,53 @@ export class WorldManager {
     const g = new THREE.Group();
     g.position.set(x, y, z);
 
-    const foundation = new THREE.Mesh(new THREE.BoxGeometry(10.4, 0.55, 8.9), this.mats.concreteDark);
-    foundation.position.y = 0.27;
-    const walls = new THREE.Mesh(new THREE.BoxGeometry(10, 4.2, 8.5), this.mats.woodCrate);
-    walls.position.y = 2.2;
+    const foundation = new THREE.Mesh(new THREE.BoxGeometry(10.6, 0.65, 9.1), this.mats.concreteDark);
+    foundation.position.y = 0.32;
+    foundation.receiveShadow = true;
+
+    const walls = new THREE.Mesh(new THREE.BoxGeometry(10, 4.2, 8.5), this.mats.desertStucco);
+    walls.position.y = 2.4;
     walls.castShadow = true;
     walls.receiveShadow = true;
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(8.1, 3.3, 4), this.mats.rustedMetal);
-    roof.rotation.y = Math.PI / 4;
-    roof.position.y = 5.95;
-    roof.castShadow = true;
-    const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.8, 0.9), this.mats.brickUrban);
-    chimney.position.set(-2.4, 6.2, -1.5);
-    const winF = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.3, 0.16), this.mats.glassTinted);
-    winF.position.set(-2.4, 2.4, 4.26);
-    const winF2 = winF.clone();
-    winF2.position.x = 2.4;
-    const door = new THREE.Mesh(new THREE.BoxGeometry(1.3, 2.3, 0.16), this.mats.bunkerSteel);
-    door.position.set(0, 1.4, 4.26);
-    const porch = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.25, 2.0), this.mats.concrete);
-    porch.position.set(0, 0.2, 5.2);
 
-    g.add(foundation, walls, roof, chimney, winF, winF2, door, porch);
+    // Pitched corrugated gable roof (2 sloped eaves + gable end triangles)
+    const roofSlopeL = new THREE.Mesh(new THREE.BoxGeometry(11.0, 0.22, 5.4), this.mats.rustedMetal);
+    roofSlopeL.position.set(0, 5.35, -2.3);
+    roofSlopeL.rotation.x = 0.42;
+    roofSlopeL.castShadow = true;
+    const roofSlopeR = new THREE.Mesh(new THREE.BoxGeometry(11.0, 0.22, 5.4), this.mats.rustedMetal);
+    roofSlopeR.position.set(0, 5.35, 2.3);
+    roofSlopeR.rotation.x = -0.42;
+    roofSlopeR.castShadow = true;
+    const ridgeCap = new THREE.Mesh(new THREE.BoxGeometry(11.1, 0.26, 0.45), this.mats.bunkerSteel);
+    ridgeCap.position.set(0, 6.4, 0);
+
+    const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.95, 2.8, 0.95), this.mats.brickUrban);
+    chimney.position.set(-2.6, 6.4, -1.4);
+    chimney.castShadow = true;
+
+    this.buildDetailedWindowBay(g, -2.7, 2.5, 4.28, 1.8, 1.25, 0);
+    this.buildDetailedWindowBay(g, 2.7, 2.5, 4.28, 1.8, 1.25, 0);
+    this.buildDetailedWindowBay(g, -2.7, 2.5, -4.28, 1.8, 1.25, Math.PI);
+    this.buildDetailedWindowBay(g, 2.7, 2.5, -4.28, 1.8, 1.25, Math.PI);
+
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.3, 2.35, 0.2), this.mats.woodCrate);
+    door.position.set(0, 1.5, 4.28);
+    const porch = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.3, 2.2), this.mats.concrete);
+    porch.position.set(0, 0.25, 5.3);
+    const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.16, 2.4), this.mats.corrugatedMetal);
+    porchRoof.position.set(0, 3.1, 5.35);
+    porchRoof.rotation.x = 0.14;
+    for (const px of [-2.0, 2.0]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.8, 0.16), this.mats.bunkerSteel);
+      post.position.set(px, 1.65, 6.25);
+      post.castShadow = true;
+      g.add(post);
+    }
+
+    g.add(foundation, walls, roofSlopeL, roofSlopeR, ridgeCap, chimney, door, porch, porchRoof);
     group.add(g);
-    this.addStaticCollider(x, y + 2.1, z, 10, 4.2, 8.5, 'wood', key, colliders);
+    this.addStaticCollider(x, y + 2.1, z, 10, 4.2, 8.5, 'concrete', key, colliders);
   }
 
   private buildSecurityCamera(group: THREE.Group, x: number, y: number, z: number, baseYaw: number, key: string) {
