@@ -515,14 +515,17 @@ export class TerrainManager {
             terrainAlbedo = mix(terrainAlbedo, terrainAlbedo * strata, smoothstep(0.15, 0.65, bRock));
           }
 
-          // Blended PBR Roughness (stored linearly in alpha channel of each packed texture)
-          float terrainRoughness =
+          // Blended PBR Roughness (clamped to realistic dry outdoor terrain range)
+          float terrainRoughness = clamp(
             sSand.a * bSand +
             sDirt.a * bDirt +
             sGrass.a * bGrass +
             sRock.a * bRock +
             sConcrete.a * bConcrete +
-            sAsphalt.a * bAsphalt;
+            sAsphalt.a * bAsphalt,
+            0.85,
+            0.99
+          );
 
           // Blended World Tangent-Space Normal (strong crisp relief close up, smooth anti-aliased far away)
           float normalAtten = mix(1.0, 0.45, distFade);
